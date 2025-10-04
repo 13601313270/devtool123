@@ -73,6 +73,14 @@
             background-color: #e55c5c;
         }
         
+        #formatBtn {
+            background-color: #3498db;
+        }
+        
+        #formatBtn:hover {
+            background-color: #2980b9;
+        }
+        
         .result-section {
             margin-top: 30px;
         }
@@ -179,8 +187,10 @@
         </div>
         
         <div class="button-group">
-            <button id="parseBtn">解析JSON</button>
+            <button id="formatBtn">格式化</button>
+            <button id="parseBtn">可视化结果</button>
             <button id="clearBtn">清空</button>
+            <button id="sampleBtn">示例JSON</button>
         </div>
         
         <div class="result-section">
@@ -196,8 +206,11 @@
             const jsonInput = document.getElementById('jsonInput');
             const parseBtn = document.getElementById('parseBtn');
             const clearBtn = document.getElementById('clearBtn');
-            const sampleBtn = document.getElementById('sampleBtn');
+            const formatBtn = document.getElementById('formatBtn');
             const result = document.getElementById('result');
+            
+            // 格式化JSON按钮事件
+            formatBtn.addEventListener('click', formatJson);
             
             // 解析JSON按钮事件
             parseBtn.addEventListener('click', parseJson);
@@ -207,6 +220,86 @@
                 jsonInput.value = '';
                 result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串并点击"解析JSON"按钮</p>';
             });
+            
+            // 示例JSON按钮事件
+            sampleBtn.addEventListener('click', function() {
+                jsonInput.value = `{
+  "用户信息": {
+    "id": 1001,
+    "姓名": "张三",
+    "年龄": 28,
+    "已婚": true,
+    "职业": "软件工程师",
+    "爱好": [
+      "阅读",
+      "游泳",
+      "编程",
+      "旅行"
+    ],
+    "地址": {
+      "国家": "中国",
+      "城市": "深圳",
+      "区域": "南山区",
+      "详细地址": "科技园南路1001号"
+    },
+    "联系方式": {
+      "电话": null,
+      "邮箱": "zhangsan@example.com"
+    }
+  },
+  "订单列表": [
+    {
+      "订单号": "ORD2023001",
+      "商品": [
+        {
+          "名称": "笔记本电脑",
+          "价格": 8999.99,
+          "数量": 1
+        },
+        {
+          "名称": "无线鼠标",
+          "价格": 199.5,
+          "数量": 2
+        }
+      ],
+      "总金额": 9398.99,
+      "状态": "已完成"
+    },
+    {
+      "订单号": "ORD2023002",
+      "商品": [
+        {
+          "名称": "机械键盘",
+          "价格": 599,
+          "数量": 1
+        }
+      ],
+      "总金额": 599,
+      "状态": "待发货"
+    }
+  ]
+}`;
+                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">已加载示例JSON，请点击"解析JSON"按钮查看可视化结果</p>';
+            });
+            
+            // 格式化JSON函数
+            function formatJson() {
+                const jsonString = jsonInput.value.trim();
+                
+                if (!jsonString) {
+                    result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
+                    return;
+                }
+                
+                try {
+                    const jsonObj = JSON.parse(jsonString);
+                    const formattedJson = JSON.stringify(jsonObj, null, 2); // 使用2个空格缩进
+                    jsonInput.value = formattedJson;
+                    result.innerHTML = '<p style="color: #27ae60; text-align: center;">JSON格式化成功！</p>';
+                } catch (error) {
+                    result.innerHTML = `<div class="error">JSON格式化错误：<br>${error.message}</div>`;
+                }
+            }
             
             // 解析JSON函数
             function parseJson() {
