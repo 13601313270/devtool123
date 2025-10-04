@@ -32,13 +32,24 @@
 
     <div class="grid-container">
       <div class="grid-item" v-for="item in tools" :key="item.id"
-        :style="{ gridColumn: 'span ' + item.width, gridRow: 'span ' + item.height }">
+        :style="{ gridColumn: 'span ' + item.width, gridRow: 'span ' + item.height }" @click="activeTool = item">
         <div class="tool-content">
           <h3>{{ item.name }}</h3>
           <p>{{ item.description }}</p>
         </div>
       </div>
     </div>
+  </div>
+  <div class="dialog" v-if="activeTool">
+    <div class="title">
+      {{ activeTool.name }}
+      <div class="close" @click="activeTool = null">
+        <img src="@/assets/close.svg" alt="" />
+      </div>
+    </div>
+    <iframe v-if="activeTool.id === 1" src="./tools/json/index.html" frameborder="0" />
+    <iframe v-else-if="activeTool.id === 2" src="./tools/md5/index.html" frameborder="0" />
+    <div v-else>{{ activeTool }}</div>
   </div>
 </template>
 
@@ -68,31 +79,33 @@ const userInfo = ref<{
   }
 }>()
 const userHover = ref<boolean>(false)
+const activeTool = ref<Tool>()
 
 const tools = ref<Tool[]>([
-  { id: 1, name: '代码格式化', description: '美化和格式化代码', width: 1, height: 1 },
-  { id: 2, name: 'JSON工具', description: 'JSON解析和验证', width: 1, height: 1 },
-  { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
-  { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
-  { id: 5, name: '正则表达式', description: '正则表达式测试和验证', width: 1, height: 1 },
-  { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
-  { id: 7, name: 'Base64编码', description: 'Base64编解码工具', width: 2, height: 1 },
-  { id: 8, name: '单位转换', description: '常用单位换算', width: 1, height: 1 },
-  { id: 9, name: '密码生成', description: '安全密码生成器', width: 1, height: 1 },
-  { id: 10, name: 'Markdown编辑器', description: '实时预览Markdown文档', width: 2, height: 1 },
-  { id: 11, name: '图片压缩', description: '压缩图片文件大小', width: 2, height: 1 },
-  { id: 12, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
-  { id: 13, name: '文件转换', description: '文件格式转换工具', width: 2, height: 1 },
-  { id: 14, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 2, height: 1 },
-  { id: 15, name: 'XML格式化', description: '美化和格式化XML数据', width: 2, height: 1 },
-  { id: 16, name: 'SQL格式化', description: '美化和格式化SQL语句', width: 2, height: 1 },
-  { id: 17, name: 'CSV工具', description: 'CSV文件解析和转换', width: 2, height: 1 },
-  { id: 18, name: 'Markdown预览', description: '实时预览Markdown文档', width: 2, height: 1 },
-  { id: 19, name: '文件下载', description: '文件下载工具', width: 2, height: 1 },
-  { id: 20, name: '文件上传', description: '文件上传工具', width: 2, height: 1 },
-  { id: 21, name: '文件合并', description: '合并多个文件', width: 2, height: 1 },
-  { id: 22, name: '文件拆分', description: '拆分大文件为多个小文件', width: 2, height: 1 },
-  { id: 23, name: '文件加密', description: '文件加密工具', width: 2, height: 1 },
+  { id: 1, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 1, height: 1 },
+  { id: 2, name: 'MD5', description: '计算字符串的MD5哈希值', width: 1, height: 1 },
+  // { id: 1, name: '代码格式化', description: '美化和格式化代码', width: 1, height: 1 },
+  // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
+  // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
+  // { id: 5, name: '正则表达式', description: '正则表达式测试和验证', width: 1, height: 1 },
+  // { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
+  // { id: 7, name: 'Base64编码', description: 'Base64编解码工具', width: 2, height: 1 },
+  // { id: 8, name: '单位转换', description: '常用单位换算', width: 1, height: 1 },
+  // { id: 9, name: '密码生成', description: '安全密码生成器', width: 1, height: 1 },
+  // { id: 10, name: 'Markdown编辑器', description: '实时预览Markdown文档', width: 2, height: 1 },
+  // { id: 11, name: '图片压缩', description: '压缩图片文件大小', width: 2, height: 1 },
+  // { id: 12, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
+  // { id: 13, name: '文件转换', description: '文件格式转换工具', width: 2, height: 1 },
+  // { id: 14, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 2, height: 1 },
+  // { id: 15, name: 'XML格式化', description: '美化和格式化XML数据', width: 2, height: 1 },
+  // { id: 16, name: 'SQL格式化', description: '美化和格式化SQL语句', width: 2, height: 1 },
+  // { id: 17, name: 'CSV工具', description: 'CSV文件解析和转换', width: 2, height: 1 },
+  // { id: 18, name: 'Markdown预览', description: '实时预览Markdown文档', width: 2, height: 1 },
+  // { id: 19, name: '文件下载', description: '文件下载工具', width: 2, height: 1 },
+  // { id: 20, name: '文件上传', description: '文件上传工具', width: 2, height: 1 },
+  // { id: 21, name: '文件合并', description: '合并多个文件', width: 2, height: 1 },
+  // { id: 22, name: '文件拆分', description: '拆分大文件为多个小文件', width: 2, height: 1 },
+  // { id: 23, name: '文件加密', description: '文件加密工具', width: 2, height: 1 },
 ]);
 onMounted(async () => {
   initUnitUserInfo();
@@ -171,6 +184,13 @@ async function signOut() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 12px;
+
+  h1 {
+    text-align: center;
+    margin: 0;
+    color: #333;
+  }
 
   .userIcon {
     width: 48px;
@@ -307,12 +327,6 @@ async function signOut() {
   }
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-}
-
 .grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -329,6 +343,7 @@ h1 {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border: solid 1px #e6e6e6;
 }
 
 .grid-item:hover {
@@ -344,6 +359,7 @@ h1 {
   justify-content: center;
   align-items: center;
   text-align: center;
+  cursor: pointer;
 }
 
 .tool-content h3 {
@@ -356,5 +372,55 @@ h1 {
   margin: 0;
   color: #666;
   font-size: 0.9em;
+}
+
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background-color: rgba(255, 255, 255, 1);
+  border-radius: 24px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .title {
+    flex-shrink: 0;
+    height: 48px;
+    line-height: 48px;
+    color: rgba(3, 61, 93, 1);
+    font-size: 24px;
+    font-family: PingFangSC-regular;
+    text-align: center;
+
+    .close {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10001;
+
+      >img {
+        width: 25px;
+        height: 25px;
+      }
+    }
+  }
+
+  >iframe {
+    width: 100%;
+    height: 100%;
+    flex-grow: 1;
+  }
 }
 </style>
