@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,42 +11,34 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+            padding: 15px;
         }
-        
-        h1 {
-            margin: 0;
-            color: #333;
-            text-align: center;
-            margin-bottom: 12px;
-        }
-        
+
         .description {
             text-align: center;
-            color: #666;
-            margin-bottom: 30px;
+            color: #9f9f9f;
+            font-size: 14px;
+            margin-bottom: 12px;
         }
-        
-        .input-section {
-            margin-bottom: 30px;
-        }
-        
+
+        .input-section {}
+
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
             color: #333;
         }
-        
+
         textarea {
             width: 100%;
             height: 120px;
@@ -57,12 +50,12 @@
             resize: vertical;
             box-sizing: border-box;
         }
-        
+
         .button-group {
             text-align: center;
             margin: 20px 0;
         }
-        
+
         button {
             background-color: #42b983;
             color: white;
@@ -74,23 +67,23 @@
             margin: 0 10px;
             transition: background-color 0.3s;
         }
-        
+
         button:hover {
             background-color: #359c6d;
         }
-        
+
         #clearBtn {
             background-color: #ff6b6b;
         }
-        
+
         #clearBtn:hover {
             background-color: #e55c5c;
         }
-        
+
         .result-section {
             margin-top: 30px;
         }
-        
+
         #result {
             border: 1px solid #eee;
             border-radius: 4px;
@@ -101,7 +94,7 @@
             font-size: 16px;
             word-break: break-all;
         }
-        
+
         .copy-btn {
             background-color: #3498db;
             color: white;
@@ -113,11 +106,53 @@
             margin-top: 10px;
             transition: background-color 0.3s;
         }
-        
+
         .copy-btn:hover {
             background-color: #2980b9;
         }
-        
+
+        .copy-btn.small {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-top: 0;
+            margin-left: 10px;
+        }
+
+        #result-formats {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+
+        .format-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .format-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .format-item strong {
+            color: #333;
+            min-width: 80px;
+        }
+
+        .format-item span {
+            flex: 1;
+            margin: 0 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: #555;
+        }
+
         .notification {
             position: fixed;
             top: 20px;
@@ -130,7 +165,7 @@
             display: none;
             z-index: 1000;
         }
-        
+
         .error {
             color: #ff4757;
             background-color: #fff0f0;
@@ -140,78 +175,116 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>MD5加密工具</h1>
-        <p class="description">将字符串转换为MD5哈希值</p>
-        
         <div class="input-section">
-            <label for="inputText">输入文本：</label>
+            <div style="display: flex;font-size: 16px;">
+                <label for="inputText">输入文本：</label>
+                <span class="description">将字符串转换为MD5哈希值</span>
+            </div>
             <textarea id="inputText" placeholder="请输入需要加密的文本..."></textarea>
         </div>
-        
+
         <div class="button-group">
             <button id="generateBtn">生成MD5</button>
             <button id="clearBtn">清空</button>
         </div>
-        
+
         <div class="result-section">
-            <label>MD5哈希值：</label>
-            <div id="result">
-                <p style="color: #7f8c8d; text-align: center;">请输入文本并点击"生成MD5"按钮</p>
+            <label>MD5哈希值（不同格式）：</label>
+            <div id="result-formats">
+                <div class="format-item">
+                    <strong>32位小写：</strong>
+                    <span id="md5-32-lower">-</span>
+                    <button class="copy-btn small"
+                        onclick="copyToClipboard(document.getElementById('md5-32-lower').textContent)">复制</button>
+                </div>
+                <div class="format-item">
+                    <strong>32位大写：</strong>
+                    <span id="md5-32-upper">-</span>
+                    <button class="copy-btn small"
+                        onclick="copyToClipboard(document.getElementById('md5-32-upper').textContent)">复制</button>
+                </div>
+                <div class="format-item">
+                    <strong>16位小写：</strong>
+                    <span id="md5-16-lower">-</span>
+                    <button class="copy-btn small"
+                        onclick="copyToClipboard(document.getElementById('md5-16-lower').textContent)">复制</button>
+                </div>
+                <div class="format-item">
+                    <strong>16位大写：</strong>
+                    <span id="md5-16-upper">-</span>
+                    <button class="copy-btn small"
+                        onclick="copyToClipboard(document.getElementById('md5-16-upper').textContent)">复制</button>
+                </div>
             </div>
         </div>
     </div>
-    
+
     <div id="notification" class="notification">已复制到剪贴板</div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const inputText = document.getElementById('inputText');
             const generateBtn = document.getElementById('generateBtn');
             const clearBtn = document.getElementById('clearBtn');
-            const result = document.getElementById('result');
             const notification = document.getElementById('notification');
-            
+
             // 生成MD5按钮事件
             generateBtn.addEventListener('click', generateMD5);
-            
+
             // 清空按钮事件
-            clearBtn.addEventListener('click', function() {
+            clearBtn.addEventListener('click', function () {
                 inputText.value = '';
-                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入文本并点击"生成MD5"按钮</p>';
             });
-            
+
             // 生成MD5函数
             function generateMD5() {
                 const text = inputText.value.trim();
-                
+
                 if (!text) {
-                    result.innerHTML = '<div class="error">请输入需要加密的文本</div>';
+                    // 清空格式化结果
+                    document.getElementById('md5-32-lower').textContent = '-';
+                    document.getElementById('md5-32-upper').textContent = '-';
+                    document.getElementById('md5-16-lower').textContent = '-';
+                    document.getElementById('md5-16-upper').textContent = '-';
                     return;
                 }
-                
+
                 try {
                     // 使用CryptoJS生成MD5哈希值
                     const hash = CryptoJS.MD5(text).toString();
-                    result.innerHTML = `
-                        <div>${hash}</div>
-                        <button class="copy-btn" onclick="copyToClipboard('${hash}')">复制结果</button>
-                    `;
+
+                    // 生成4种不同格式
+                    const md5_32_lower = hash.toLowerCase();
+                    const md5_32_upper = hash.toUpperCase();
+                    const md5_16_lower = hash.substring(8, 24).toLowerCase();
+                    const md5_16_upper = hash.substring(8, 24).toUpperCase();
+
+                    // 更新格式化结果
+                    document.getElementById('md5-32-lower').textContent = md5_32_lower;
+                    document.getElementById('md5-32-upper').textContent = md5_32_upper;
+                    document.getElementById('md5-16-lower').textContent = md5_16_lower;
+                    document.getElementById('md5-16-upper').textContent = md5_16_upper;
                 } catch (error) {
-                    result.innerHTML = `<div class="error">生成MD5时发生错误：<br>${error.message}</div>`;
+                    // 清空格式化结果
+                    document.getElementById('md5-32-lower').textContent = '-';
+                    document.getElementById('md5-32-upper').textContent = '-';
+                    document.getElementById('md5-16-lower').textContent = '-';
+                    document.getElementById('md5-16-upper').textContent = '-';
                 }
             }
-            
+
             // 复制到剪贴板函数
-            window.copyToClipboard = function(text) {
-                navigator.clipboard.writeText(text).then(function() {
+            window.copyToClipboard = function (text) {
+                navigator.clipboard.writeText(text).then(function () {
                     // 显示通知
                     notification.style.display = 'block';
-                    setTimeout(function() {
+                    setTimeout(function () {
                         notification.style.display = 'none';
                     }, 2000);
-                }).catch(function(err) {
+                }).catch(function (err) {
                     console.error('复制失败:', err);
                     alert('复制失败，请手动复制');
                 });
@@ -219,4 +292,5 @@
         });
     </script>
 </body>
+
 </html>
