@@ -52,7 +52,7 @@
             margin: 16px 0 8px;
         }
 
-        button {
+        .button-group button {
             background-color: #42b983;
             color: white;
             border: none;
@@ -60,7 +60,7 @@
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            margin: 0 10px;
+            margin: 0 4px;
             transition: background-color 0.3s;
         }
 
@@ -217,9 +217,12 @@
 
         <div class="button-group">
             <button id="formatBtn">格式化</button>
+            <button id="compressBtn">压缩</button>
+            <button id="cnToUnicodeBtn">中文转Unicode</button>
+            <button id="unicodeToCnBtn">Unicode转中文</button>
             <button id="parseBtn">可视化结果</button>
-            <button id="clearBtn">清空</button>
-            <button id="sampleBtn">示例JSON</button>
+            <!-- <button id="clearBtn">清空</button>
+            <button id="sampleBtn">示例JSON</button> -->
         </div>
 
         <div class="result-section">
@@ -246,6 +249,18 @@
 
             // 格式化JSON按钮事件
             formatBtn.addEventListener('click', formatJson);
+
+            // 压缩JSON按钮事件
+            const compressBtn = document.getElementById('compressBtn');
+            compressBtn.addEventListener('click', compressJson);
+
+            // 中文转Unicode按钮事件
+            const cnToUnicodeBtn = document.getElementById('cnToUnicodeBtn');
+            cnToUnicodeBtn.addEventListener('click', convertCnToUnicode);
+
+            // Unicode转中文按钮事件
+            const unicodeToCnBtn = document.getElementById('unicodeToCnBtn');
+            unicodeToCnBtn.addEventListener('click', convertUnicodeToCn);
 
             // 解析JSON按钮事件
             parseBtn.addEventListener('click', parseJson);
@@ -342,6 +357,69 @@
                     result.innerHTML = '<p style="color: #27ae60; text-align: center;">JSON格式化成功！</p>';
                 } catch (error) {
                     result.innerHTML = `<div class="error">JSON格式化错误：<br>${error.message}</div>`;
+                }
+            }
+
+            // 压缩JSON函数
+            function compressJson() {
+                const jsonString = jsonInput.value.trim();
+
+                if (!jsonString) {
+                    result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
+                    return;
+                }
+
+                try {
+                    const jsonObj = JSON.parse(jsonString);
+                    const compressedJson = JSON.stringify(jsonObj); // 不使用缩进，压缩成一行
+                    jsonInput.value = compressedJson;
+                    result.innerHTML = '<p style="color: #27ae60; text-align: center;">JSON压缩成功！</p>';
+                } catch (error) {
+                    result.innerHTML = `<div class="error">JSON压缩错误：<br>${error.message}</div>`;
+                }
+            }
+
+            // 中文转Unicode函数
+            function convertCnToUnicode() {
+                const jsonString = jsonInput.value.trim();
+
+                if (!jsonString) {
+                    result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
+                    return;
+                }
+
+                try {
+                    // 将中文字符转换为Unicode编码
+                    let unicodeString = jsonString.replace(/[\u4e00-\u9fa5]/g, function (char) {
+                        return "\\u" + char.charCodeAt(0).toString(16).padStart(4, '0');
+                    });
+                    
+                    jsonInput.value = unicodeString;
+                    result.innerHTML = '<p style="color: #27ae60; text-align: center;">中文转Unicode成功！</p>';
+                } catch (error) {
+                    result.innerHTML = `<div class="error">中文转Unicode错误：<br>${error.message}</div>`;
+                }
+            }
+
+            // Unicode转中文函数
+            function convertUnicodeToCn() {
+                const jsonString = jsonInput.value.trim();
+
+                if (!jsonString) {
+                    result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
+                    return;
+                }
+
+                try {
+                    // 将Unicode编码转换为中文字符
+                    let cnString = jsonString.replace(/\\u([0-9a-fA-F]{4})/g, function (match, grp) {
+                        return String.fromCharCode(parseInt(grp, 16));
+                    });
+                    
+                    jsonInput.value = cnString;
+                    result.innerHTML = '<p style="color: #27ae60; text-align: center;">Unicode转中文成功！</p>';
+                } catch (error) {
+                    result.innerHTML = `<div class="error">Unicode转中文错误：<br>${error.message}</div>`;
                 }
             }
 
