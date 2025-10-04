@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,34 +8,36 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            background-color: white;
             margin: 0;
-            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+            padding: 12px;
+            box-sizing: border-box;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
-        
+
         h1 {
             margin: 0;
             color: #333;
             text-align: center;
             margin-bottom: 12px;
         }
-        
+
         .input-section {
-            margin-bottom: 30px;
+            flex-grow: 1;
         }
-        
-        textarea {
+
+        .input-section textarea {
             width: 100%;
-            height: 150px;
+            height: 100%;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -43,12 +46,12 @@
             resize: vertical;
             box-sizing: border-box;
         }
-        
+
         .button-group {
             text-align: center;
-            margin: 20px 0;
+            margin: 16px 0 8px;
         }
-        
+
         button {
             background-color: #42b983;
             color: white;
@@ -60,39 +63,63 @@
             margin: 0 10px;
             transition: background-color 0.3s;
         }
-        
+
         button:hover {
             background-color: #359c6d;
         }
-        
+
         #clearBtn {
             background-color: #ff6b6b;
         }
-        
+
         #clearBtn:hover {
             background-color: #e55c5c;
         }
-        
+
         #formatBtn {
             background-color: #3498db;
         }
-        
+
         #formatBtn:hover {
             background-color: #2980b9;
         }
-        
-        .result-section {
-            margin-top: 30px;
+
+        #hideResultBtn {
+            background-color: #95a5a6;
+            padding: 5px 10px;
+            font-size: 14px;
         }
-        
+
+        #hideResultBtn:hover {
+            background-color: #7f8c8d;
+        }
+
+        .result-section {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: white;
+            display: none;
+            flex-direction: column;
+        }
+
+        .result-section h2 {
+            margin: 8px 16px;
+        }
+
         #result {
             border: 1px solid #eee;
             border-radius: 4px;
             padding: 20px;
             background-color: #fafafa;
             min-height: 200px;
+            overflow: auto;
         }
-        
+
         .error {
             color: #ff4757;
             background-color: #fff0f0;
@@ -102,74 +129,76 @@
             font-family: 'Courier New', monospace;
             white-space: pre-wrap;
         }
-        
+
         /* JSON可视化样式 */
         .json-container {
             font-family: 'Courier New', monospace;
             font-size: 14px;
             line-height: 1.5;
         }
-        
+
         .json-key {
             color: #922b21;
             font-weight: bold;
         }
-        
+
         .json-string {
             color: #27ae60;
         }
-        
+
         .json-number {
             color: #2980b9;
         }
-        
+
         .json-boolean {
             color: #8e44ad;
         }
-        
+
         .json-null {
             color: #7f8c8d;
         }
-        
+
         .collapsible {
             cursor: pointer;
             user-select: none;
             display: inline-block;
         }
-        
+
         .collapsible::before {
             content: '▶ ';
             transition: transform 0.2s;
             display: inline-block;
         }
-        
+
         .collapsible.expanded::before {
             transform: rotate(90deg);
         }
-        
+
         .collapsible-content {
             margin-left: 20px;
             display: none;
         }
-        
+
         .collapsible-content.expanded {
             display: block;
         }
-        
+
         .bracket {
             cursor: pointer;
         }
-        
-        .object-bracket, .array-bracket {
+
+        .object-bracket,
+        .array-bracket {
             color: #34495e;
         }
-        
+
         .ellipsis {
             color: #7f8c8d;
             margin-left: 20px;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- <h1>JSON可视化工具</h1> -->
@@ -185,44 +214,53 @@
   }
 }'></textarea>
         </div>
-        
+
         <div class="button-group">
             <button id="formatBtn">格式化</button>
             <button id="parseBtn">可视化结果</button>
             <button id="clearBtn">清空</button>
             <button id="sampleBtn">示例JSON</button>
         </div>
-        
+
         <div class="result-section">
-            <h2>可视化结果</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>可视化结果</h2>
+                <button id="hideResultBtn">隐藏结果</button>
+            </div>
             <div id="result">
-                <p style="color: #7f8c8d; text-align: center;">请输入JSON字符串并点击"解析JSON"按钮</p>
+                <p style="color: #7f8c8d; text-align: center;">请输入JSON字符串并点击"可视化结果"按钮</p>
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const jsonInput = document.getElementById('jsonInput');
             const parseBtn = document.getElementById('parseBtn');
             const clearBtn = document.getElementById('clearBtn');
             const formatBtn = document.getElementById('formatBtn');
+            const sampleBtn = document.getElementById('sampleBtn');
+            const hideResultBtn = document.getElementById('hideResultBtn');
+            const resultSection = document.querySelector('.result-section');
             const result = document.getElementById('result');
-            
+
             // 格式化JSON按钮事件
             formatBtn.addEventListener('click', formatJson);
-            
+
             // 解析JSON按钮事件
             parseBtn.addEventListener('click', parseJson);
-            
+
+            // 隐藏结果按钮事件
+            hideResultBtn.addEventListener('click', hideResult);
+
             // 清空按钮事件
-            clearBtn.addEventListener('click', function() {
+            clearBtn.addEventListener('click', function () {
                 jsonInput.value = '';
-                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串并点击"解析JSON"按钮</p>';
+                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串并点击"可视化结果"按钮</p>';
             });
-            
+
             // 示例JSON按钮事件
-            sampleBtn.addEventListener('click', function() {
+            sampleBtn.addEventListener('click', function () {
                 jsonInput.value = `{
   "用户信息": {
     "id": 1001,
@@ -279,18 +317,24 @@
     }
   ]
 }`;
-                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">已加载示例JSON，请点击"解析JSON"按钮查看可视化结果</p>';
+                result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">已加载示例JSON，请点击"可视化结果"按钮查看可视化结果</p>';
             });
-            
+
+            // 隐藏结果函数
+            function hideResult() {
+                const resultSection = document.querySelector('.result-section');
+                resultSection.style.display = 'none';
+            }
+
             // 格式化JSON函数
             function formatJson() {
                 const jsonString = jsonInput.value.trim();
-                
+
                 if (!jsonString) {
                     result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
                     return;
                 }
-                
+
                 try {
                     const jsonObj = JSON.parse(jsonString);
                     const formattedJson = JSON.stringify(jsonObj, null, 2); // 使用2个空格缩进
@@ -300,16 +344,16 @@
                     result.innerHTML = `<div class="error">JSON格式化错误：<br>${error.message}</div>`;
                 }
             }
-            
+
             // 解析JSON函数
             function parseJson() {
                 const jsonString = jsonInput.value.trim();
-                
+
                 if (!jsonString) {
                     result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入JSON字符串</p>';
                     return;
                 }
-                
+
                 try {
                     const jsonObj = JSON.parse(jsonString);
                     result.innerHTML = '';
@@ -317,18 +361,22 @@
                     container.className = 'json-container';
                     renderJsonValue(jsonObj, container);
                     result.appendChild(container);
-                    
+
+                    // 显示结果区域
+                    const resultSection = document.querySelector('.result-section');
+                    resultSection.style.display = 'flex';
+
                     // 添加折叠事件监听器
                     addCollapseEventListeners();
                 } catch (error) {
                     result.innerHTML = `<div class="error">JSON解析错误：<br>${error.message}</div>`;
                 }
             }
-            
+
             // 渲染JSON值
             function renderJsonValue(value, parentElement, key = null, isLast = true) {
                 const wrapper = document.createElement('div');
-                
+
                 // 如果有键名，先渲染键名
                 if (key !== null) {
                     const keySpan = document.createElement('span');
@@ -337,7 +385,7 @@
                     wrapper.appendChild(keySpan);
                     wrapper.appendChild(document.createTextNode(': '));
                 }
-                
+
                 // 根据值的类型进行渲染
                 if (value === null) {
                     const nullSpan = document.createElement('span');
@@ -364,34 +412,34 @@
                 } else if (typeof value === 'object') {
                     renderJsonObject(value, wrapper, isLast);
                 }
-                
+
                 // 如果不是最后一个元素，添加逗号
                 if (!isLast) {
                     wrapper.appendChild(document.createTextNode(','));
                 }
-                
+
                 parentElement.appendChild(wrapper);
             }
-            
+
             // 渲染JSON对象
             function renderJsonObject(obj, parentElement, isLast = true) {
                 const keys = Object.keys(obj);
                 const isEmpty = keys.length === 0;
-                
+
                 // 创建可折叠的容器
                 const collapsibleWrapper = document.createElement('div');
                 collapsibleWrapper.className = 'collapsible-wrapper';
-                
+
                 // 创建折叠触发器
                 const collapsible = document.createElement('span');
                 collapsible.className = 'collapsible expanded';
                 collapsible.innerHTML = '{';
                 collapsibleWrapper.appendChild(collapsible);
-                
+
                 // 创建内容容器
                 const content = document.createElement('div');
                 content.className = 'collapsible-content expanded';
-                
+
                 if (isEmpty) {
                     // 空对象
                     content.innerHTML = '}';
@@ -401,40 +449,40 @@
                         const isLastItem = index === keys.length - 1;
                         renderJsonValue(obj[key], content, key, isLastItem);
                     });
-                    
+
                     // 结束括号
                     const endBracket = document.createElement('div');
                     endBracket.innerHTML = '}';
                     content.appendChild(endBracket);
                 }
-                
+
                 collapsibleWrapper.appendChild(content);
                 parentElement.appendChild(collapsibleWrapper);
-                
+
                 // 如果不是最后一个元素，添加逗号
                 if (!isLast) {
                     // parentElement.appendChild(document.createTextNode(','));
                 }
             }
-            
+
             // 渲染JSON数组
             function renderJsonArray(arr, parentElement, isLast = true) {
                 const isEmpty = arr.length === 0;
-                
+
                 // 创建可折叠的容器
                 const collapsibleWrapper = document.createElement('div');
                 collapsibleWrapper.className = 'collapsible-wrapper';
-                
+
                 // 创建折叠触发器
                 const collapsible = document.createElement('span');
                 collapsible.className = 'collapsible expanded';
                 collapsible.innerHTML = '[';
                 collapsibleWrapper.appendChild(collapsible);
-                
+
                 // 创建内容容器
                 const content = document.createElement('div');
                 content.className = 'collapsible-content expanded';
-                
+
                 if (isEmpty) {
                     // 空数组
                     content.innerHTML = ']';
@@ -443,32 +491,32 @@
                     arr.forEach((item, index) => {
                         const itemWrapper = document.createElement('div');
                         const isLastItem = index === arr.length - 1;
-                        
+
                         // 数组元素没有键名
                         renderJsonValue(item, itemWrapper, null, isLastItem);
                         content.appendChild(itemWrapper);
                     });
-                    
+
                     // 结束括号
                     const endBracket = document.createElement('div');
                     endBracket.innerHTML = ']';
                     content.appendChild(endBracket);
                 }
-                
+
                 collapsibleWrapper.appendChild(content);
                 parentElement.appendChild(collapsibleWrapper);
-                
+
                 // 如果不是最后一个元素，添加逗号
                 if (!isLast) {
                     parentElement.appendChild(document.createTextNode(','));
                 }
             }
-            
+
             // 添加折叠事件监听器
             function addCollapseEventListeners() {
                 const collapsibles = document.querySelectorAll('.collapsible');
                 collapsibles.forEach(collapsible => {
-                    collapsible.addEventListener('click', function() {
+                    collapsible.addEventListener('click', function () {
                         this.classList.toggle('expanded');
                         const content = this.parentElement.querySelector('.collapsible-content');
                         if (content) {
@@ -480,4 +528,5 @@
         });
     </script>
 </body>
+
 </html>
