@@ -99,6 +99,7 @@
         }
 
         .tools {
+            position: relative;
             display: flex;
             flex-direction: row;
             align-items: center;
@@ -149,6 +150,46 @@
 
         .tools #compressButton {
             margin: 0;
+        }
+
+        .tools .helpDesc {
+            position: absolute;
+            background: white;
+            right: 20px;
+            bottom: -60px;
+            box-sizing: border-box;
+            border: solid 1px #4bae51;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 0 20px -10px #4bae51;
+            font-size: 24px;
+            color: rgb(75 174 81);
+        }
+
+        .tools .helpDesc::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            right: 20%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #4bae51;
+        }
+
+        .tools .helpDesc::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            right: 21.4%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
         }
 
         .result-container {
@@ -226,16 +267,30 @@
             height: 100%;
             overflow: auto;
         }
+
+        #originalImageInfo {}
+
+        #originalImageInfo .title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        #originalImageInfo .title .close {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        #originalImageInfo .title .close>img {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div id="dropArea" class="drop-area">
-            <div class="icon">📁</div>
-            <div>Drag & drop an image here or click to select</div>
-            <input type="file" id="imageInput" accept="image/*" style="display: none;">
-        </div>
         <div class="tools">
             <label for="quality">Quality:</label>
             <div class="quality-control">
@@ -249,19 +304,35 @@
             </select>
             <div style="flex-grow: 1;"></div>
             <button id="compressButton">Compress Image</button>
+            <div id="helpDesc" class="helpDesc" style="display: none;">
+                <div>click to compress image</div>
+            </div>
         </div>
         <div class="result-diff">
-            <div id="originalImageContainer" style="display: none;">
-                <div style="display: flex;align-items: center;margin-bottom: 12px;">
-                    <span>Original Image:</span>
-                    <div id="fileInfo"></div>
+            <div id="originalImageContainer">
+                <div id="dropArea" class="drop-area">
+                    <div class="icon">📁</div>
+                    <div>Drag & drop an image here or click to select</div>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;">
                 </div>
-                <img id="originalImage" src="" alt="Original Image"
-                    style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+                <div id="originalImageInfo" style="display: none;">
+                    <div class="title">
+                        <div>Original Image:</div>
+                        <div id="fileInfo"></div>
+                        <div style="flex-grow: 1;"></div>
+                        <div id="clearState" class="close">
+                            <img src="./close.svg" alt="close" />
+                        </div>
+                    </div>
+                    <img id="originalImage" src="" alt="Original Image"
+                        style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
             </div>
             <div class="result-diff-split">
             </div>
-            <div id="output"></div>
+            <div id="output">
+
+            </div>
         </div>
     </div>
 
@@ -285,6 +356,8 @@
             const fileInfo = document.getElementById('fileInfo');
             const qualitySlider = document.getElementById('quality');
             const qualityValue = document.getElementById('qualityValue');
+            const helpDesc = document.getElementById('helpDesc');
+            const clearState = document.getElementById('clearState');
 
             // 滑块值变化时更新显示
             qualitySlider.addEventListener('input', function () {
@@ -303,16 +376,27 @@
                     fileInfo.textContent = `(${(selectedFile.size / 1024).toFixed(2)} KB)`;
 
                     // 显示原图
-                    const originalImageContainer = document.getElementById('originalImageContainer');
+                    const originalImageInfo = document.getElementById('originalImageInfo');
                     const originalImage = document.getElementById('originalImage');
                     const reader = new FileReader();
                     dropArea.style.display = 'none';
+                    helpDesc.style.display = 'block';
                     reader.onload = function (e) {
                         originalImage.src = e.target.result;
-                        originalImageContainer.style.display = 'block';
+                        originalImageInfo.style.display = 'block';
                     };
                     reader.readAsDataURL(selectedFile);
                 }
+            });
+
+            clearState.addEventListener('click', () => {
+                selectedFile = null;
+                fileInfo.textContent = '';
+                originalImageInfo.style.display = 'none';
+                dropArea.style.display = 'block';
+                helpDesc.style.display = 'none';
+                compressedImages = [];
+                output.innerHTML = '';
             });
 
             // 拖拽事件处理
@@ -365,13 +449,14 @@
                 fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
 
                 // 显示原图
-                const originalImageContainer = document.getElementById('originalImageContainer');
+                const originalImageInfo = document.getElementById('originalImageInfo');
                 const originalImage = document.getElementById('originalImage');
                 const reader = new FileReader();
                 dropArea.style.display = 'none';
+                helpDesc.style.display = 'block';
                 reader.onload = function (e) {
                     originalImage.src = e.target.result;
-                    originalImageContainer.style.display = 'block';
+                    originalImageInfo.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
 
@@ -473,6 +558,7 @@
                         // 将新结果插入到output的顶部
                         output.insertBefore(resultContainer, output.firstChild);
                         URL.revokeObjectURL(url);
+                        helpDesc.style.display = 'none';
                     };
                     img.src = url;
 
