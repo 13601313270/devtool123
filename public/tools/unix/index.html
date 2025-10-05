@@ -117,10 +117,12 @@
 
         .format-options {
             margin: 15px 0;
+            display: flex;
         }
 
         .format-option {
             margin-bottom: 8px;
+            margin-right: 32px;
         }
 
         .format-option label {
@@ -227,6 +229,36 @@
             color: #7f8c8d;
         }
 
+        /* 新增的复制按钮相关样式 */
+        .copy-button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .copy-button:hover {
+            opacity: 0.9;
+        }
+
+        .copy-button.copied {
+            background-color: #27ae60;
+        }
+
+        .result-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-content {
+            flex-grow: 1;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -239,19 +271,23 @@
             .button-group button {
                 width: 100%;
             }
+            
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .copy-button {
+                margin-left: 0;
+                margin-top: 5px;
+                width: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1 style="text-align: center; color: #333;">Unix时间戳转换工具</h1>
-        <p class="description">支持日期与时间戳互转，可选择10位或13位时间戳</p>
-
-        <div class="current-time" id="currentTime">
-            当前时间：--:--:--
-        </div>
-
         <!-- Unix时间戳转日期工具 -->
         <div class="tool-section">
             <h2>Unix时间戳转日期</h2>
@@ -319,6 +355,26 @@
     <div id="notification" class="notification">已复制到剪贴板</div>
 
     <script>
+        // 复制到剪贴板功能
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                // 添加已复制的类
+                button.classList.add('copied');
+                // 更改按钮文本为"已复制"
+                const originalText = button.textContent;
+                button.textContent = '已复制';
+                
+                // 2秒后恢复原始状态
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // 元素获取
             const timestampInput = document.getElementById('timestampInput');
@@ -342,6 +398,9 @@
 
             // 初始化时更新一次
             updateCurrentTime();
+
+            // 初始化时间戳输入框的placeholder文本
+            updateTimestampPlaceholder();
 
             // 每秒更新一次当前时间
             setInterval(updateCurrentTime, 1000);
@@ -390,10 +449,45 @@
                 setTimeout(convertTimestampToDate, 300);
             });
 
+            // 监听时间戳格式选项变化
+            const formatOptions = document.querySelectorAll('input[name="timestampFormat1"]');
+            formatOptions.forEach(option => {
+                option.addEventListener('change', function () {
+                    // 更新输入框的placeholder文本
+                    updateTimestampPlaceholder();
+
+                    // 如果有输入的时间戳，则重新计算结果
+                    if (timestampInput.value.trim()) {
+                        convertTimestampToDate();
+                    }
+                });
+            });
+
+            // 更新时间戳输入框的placeholder文本
+            function updateTimestampPlaceholder() {
+                const selectedFormat = document.querySelector('input[name="timestampFormat1"]:checked').value;
+                if (selectedFormat === '10') {
+                    timestampInput.placeholder = "请输入Unix时间戳，如：1701427200";
+                } else {
+                    timestampInput.placeholder = "请输入Unix时间戳，如：1701427200000";
+                }
+            }
+
             // 填入当前时间戳按钮事件
             nowBtn1.addEventListener('click', function () {
-                const now = Date.now();
-                timestampInput.value = now;
+                // 获取用户选择的时间戳格式
+                const selectedFormat = document.querySelector('input[name="timestampFormat1"]:checked').value;
+
+                let timestamp;
+                if (selectedFormat === '10') {
+                    // 10位时间戳（秒）
+                    timestamp = Math.floor(Date.now() / 1000);
+                } else {
+                    // 13位时间戳（毫秒）
+                    timestamp = Date.now();
+                }
+
+                timestampInput.value = timestamp;
                 // 触发输入事件以自动转换
                 const inputEvent = new Event('input', { bubbles: true });
                 timestampInput.dispatchEvent(inputEvent);
@@ -425,30 +519,60 @@
                 }
 
                 try {
-                    // 自动判断时间戳位数
-                    let format;
-                    if (timestamp.length === 10) {
-                        format = '10';
-                    } else if (timestamp.length === 13) {
-                        format = '13';
+                    // 获取用户选择的时间戳格式
+                    const selectedFormat = document.querySelector('input[name="timestampFormat1"]:checked').value;
+                    
+                    // 时间戳转日期
+                    let date;
+                    if (selectedFormat === '10') {
+                        // 10位时间戳（秒）
+                        date = new Date(parseInt(timestamp) * 1000);
                     } else {
-                        // 如果不是10位或13位，尝试作为10位处理
-                        format = '10';
+                        // 13位时间戳（毫秒）
+                        date = new Date(parseInt(timestamp));
                     }
 
-                    // 时间戳转日期
-                    const date = timestampToDate(timestamp, format);
-                    result1.innerHTML = `
-                        <div style="padding: 10px;">
-                            <div style="margin-bottom: 10px;"><strong>输入时间戳：</strong> ${timestamp}</div>
-                            <div style="margin-bottom: 10px;"><strong>转换结果：</strong> ${date}</div>
-                            <div><strong>时间戳位数：</strong> ${timestamp.length}位 (${format === '10' ? '秒' : '毫秒'})</div>
-                        </div>
-                    `;
+                    // 检查日期是否有效
+                    if (isNaN(date.getTime())) {
+                        throw new Error('无效的时间戳');
+                    }
+
+                    // 生成多种格式的时间显示
+                    const formats = [
+                        { label: '默认格式', value: date.toLocaleString('zh-CN') },
+                        { label: 'ISO格式', value: date.toISOString() },
+                        { label: '美式格式', value: date.toUTCString() },
+                        { label: '自定义格式', value: date.getFullYear() + '-' + 
+                            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(date.getDate()).padStart(2, '0') + ' ' + 
+                            String(date.getHours()).padStart(2, '0') + ':' + 
+                            String(date.getMinutes()).padStart(2, '0') + ':' + 
+                            String(date.getSeconds()).padStart(2, '0') },
+                        { label: '时间戳(毫秒)', value: date.getTime() }
+                    ];
+
+                    // 构建结果HTML
+                    let resultHTML = '<div>';
+                    formats.forEach((format, index) => {
+                        resultHTML += `
+                            <div class="result-item">
+                                <div class="result-content">
+                                    <strong>${format.label}：</strong> 
+                                    <span id="format-${index}">${format.value}</span>
+                                </div>
+                                <button onclick="copyToClipboard('${format.value}', this)" class="copy-button">复制</button>
+                            </div>
+                        `;
+                    });
+                    resultHTML += '</div>';
+
+                    result1.innerHTML = resultHTML;
                 } catch (error) {
                     result1.innerHTML = '<div class="error">请输入合法时间戳</div>';
                 }
             }
+
+
 
             // 日期转Unix时间戳函数
             function convertDateToTimestamp() {
@@ -472,33 +596,25 @@
 
                     result2.innerHTML = `
                         <div>
-                            <div style="margin-bottom: 10px;"><strong>输入日期：</strong> ${dateStr}</div>
-                            <div style="margin-bottom: 10px;"><strong>10位时间戳（秒）：</strong> ${timestamp10}</div>
-                            <div style="margin-bottom: 10px;"><strong>13位时间戳（毫秒）：</strong> ${timestamp13}</div>
+                            <div class="result-item">
+                                <div class="result-content">
+                                    <strong>10位时间戳（秒）：</strong> 
+                                    <span id="timestamp-10">${timestamp10}</span>
+                                </div>
+                                <button onclick="copyToClipboard('${timestamp10}', this)" class="copy-button">复制</button>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-content">
+                                    <strong>13位时间戳（毫秒）：</strong> 
+                                    <span id="timestamp-13">${timestamp13}</span>
+                                </div>
+                                <button onclick="copyToClipboard('${timestamp13}', this)" class="copy-button">复制</button>
+                            </div>
                         </div>
                     `;
                 } catch (error) {
                     result2.innerHTML = '<div class="error">请输入合法日期格式</div>';
                 }
-            }
-
-            // 时间戳转日期
-            function timestampToDate(timestamp, format) {
-                let date;
-                if (format === '10') {
-                    // 10位时间戳（秒）
-                    date = new Date(parseInt(timestamp) * 1000);
-                } else {
-                    // 13位时间戳（毫秒）
-                    date = new Date(parseInt(timestamp));
-                }
-
-                // 检查日期是否有效
-                if (isNaN(date.getTime())) {
-                    throw new Error('无效的时间戳');
-                }
-
-                return date.toLocaleString('zh-CN');
             }
 
             // 日期转时间戳
