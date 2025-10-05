@@ -182,6 +182,8 @@ async function signOut() {
 <style scoped lang="less">
 .home {
   padding: 20px;
+  box-sizing: border-box;
+  min-height: 100vh;
 }
 
 .head {
