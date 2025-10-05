@@ -54,15 +54,72 @@
             color: red;
             font-weight: bold;
         }
+        .drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+        }
+        .drop-area:hover {
+            border-color: #4CAF50;
+            background-color: #f9f9f9;
+        }
+        .drop-area.dragover {
+            border-color: #4CAF50;
+            background-color: #e8f5e9;
+        }
+        #fileInfo {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .quality-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+        input[type="range"] {
+            width: 200px;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+        #qualityValue {
+            font-weight: bold;
+            color: #4CAF50;
+            min-width: 30px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Image Compressor</h1>
-        <input type="file" id="imageInput" accept="image/*">
+        <div id="dropArea" class="drop-area">
+            <p>Drag & drop an image here or click to select</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+        <div id="fileInfo"></div>
         <br>
-        <label for="quality">Quality (1-100):</label>
-        <input type="number" id="quality" min="1" max="100" value="80">
+        <label for="quality">Quality:</label>
+        <div class="quality-control">
+            <input type="range" id="quality" min="1" max="100" value="80">
+            <span id="qualityValue">80</span>
+        </div>
         <br>
         <label for="format">Output Format:</label>
         <select id="format">
@@ -81,24 +138,104 @@
 
         let compressedBlob = null;
 
+        let selectedFile = null;
+
         async function run() {
             await init();
             window.compress_image = compress_image;
             
+            // 获取元素
+            const dropArea = document.getElementById('dropArea');
+            const imageInput = document.getElementById('imageInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const qualitySlider = document.getElementById('quality');
+            const qualityValue = document.getElementById('qualityValue');
+            
+            // 滑块值变化时更新显示
+            qualitySlider.addEventListener('input', function() {
+                qualityValue.textContent = this.value;
+            });
+            
+            // 点击拖拽区域时触发文件选择
+            dropArea.addEventListener('click', () => {
+                imageInput.click();
+            });
+            
+            // 文件选择事件
+            imageInput.addEventListener('change', (event) => {
+                if (event.target.files.length) {
+                    selectedFile = event.target.files[0];
+                    fileInfo.textContent = `Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+                }
+            });
+            
+            // 拖拽事件处理
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('dragover');
+            }
+            
+            // 处理拖拽放置事件
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    handleFiles(files);
+                }
+            }
+            
+            function handleFiles(files) {
+                const file = files[0];
+                // 检查是否为图片文件
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+                
+                selectedFile = file;
+                fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                // 同步到隐藏的input元素
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                imageInput.files = dataTransfer.files;
+            }
+            
             document.getElementById('compressButton').addEventListener('click', async () => {
-                const input = document.getElementById('imageInput');
                 const quality = parseInt(document.getElementById('quality').value);
                 const format = document.getElementById('format').value;
                 const output = document.getElementById('output');
                 const info = document.getElementById('info');
                 const downloadButton = document.getElementById('downloadButton');
 
-                if (!input.files.length) {
+                if (!selectedFile) {
                     alert('Please select an image file.');
                     return;
                 }
 
-                const file = input.files[0];
+                const file = selectedFile;
                 const originalSizeInKB = (file.size / 1024).toFixed(2);
                 const arrayBuffer = await file.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
