@@ -10,7 +10,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
@@ -105,6 +104,33 @@
             min-width: 30px;
             text-align: center;
         }
+        .result-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+        .result-container img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border: 1px solid #eee;
+        }
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .download-btn:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -128,7 +154,6 @@
         </select>
         <br>
         <button id="compressButton">Compress Image</button>
-        <button id="downloadButton" style="display:none;">Download Compressed Image</button>
         <div id="info"></div>
         <div id="output"></div>
     </div>
@@ -139,6 +164,9 @@
         let compressedBlob = null;
 
         let selectedFile = null;
+        
+        // 存储压缩图片数据的数组
+        let compressedImages = [];
 
         async function run() {
             await init();
@@ -228,7 +256,6 @@
                 const format = document.getElementById('format').value;
                 const output = document.getElementById('output');
                 const info = document.getElementById('info');
-                const downloadButton = document.getElementById('downloadButton');
 
                 if (!selectedFile) {
                     alert('Please select an image file.');
@@ -246,8 +273,7 @@
                     // 检查压缩是否成功
                     if (compressedImageData.length === 0) {
                         info.innerHTML = '<div class="error">Error compressing image. Please try a different image or settings.</div>';
-                        output.innerHTML = '';
-                        downloadButton.style.display = 'none';
+                        // 不清空output，保留之前的结果
                         return;
                     }
                     
@@ -260,43 +286,73 @@
                     img.onload = function() {
                         const compressedSizeInKB = (compressedBlob.size / 1024).toFixed(2);
                         const compressionRatio = (1 - (compressedBlob.size / file.size)) * 100;
-                        info.innerHTML = `
+                        
+                        // 为每个压缩图片生成唯一ID
+                        const imageId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                        
+                        // 将图片数据存储到数组中
+                        compressedImages.push({
+                            id: imageId,
+                            blob: compressedBlob,
+                            format: format,
+                            quality: quality
+                        });
+                        
+                        // 创建新的结果容器
+                        const resultContainer = document.createElement('div');
+                        resultContainer.className = 'result-container';
+                        resultContainer.dataset.imageId = imageId; // 将ID存储在data属性中
+                        
+                        // 为每个结果创建独立的下载按钮
+                        const downloadBtn = document.createElement('button');
+                        downloadBtn.textContent = 'Download Image';
+                        downloadBtn.className = 'download-btn';
+                        downloadBtn.onclick = function() {
+                            // 根据ID找到对应的图片数据
+                            const imageData = compressedImages.find(img => img.id === imageId);
+                            if (imageData) {
+                                const extension = imageData.format === 'jpeg' ? 'jpg' : 'png';
+                                const url = URL.createObjectURL(imageData.blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `compressed-image-${imageData.quality}-${imageId}.${extension}`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }
+                        };
+                        
+                        resultContainer.innerHTML = `
+                            <div><strong>Quality: ${quality}</strong></div>
                             <div>Original File Size: ${originalSizeInKB} KB</div>
                             <div>Compressed Image Size: ${img.width} x ${img.height}</div>
                             <div>Compressed File Size: ${compressedSizeInKB} KB</div>
                             <div>Compression Ratio: ${compressionRatio.toFixed(2)}%</div>
                         `;
+                        
+                        // 添加图片和下载按钮
+                        const imgElement = document.createElement('img');
+                        imgElement.src = url;
+                        imgElement.alt = 'Compressed Image';
+                        
+                        resultContainer.appendChild(imgElement);
+                        resultContainer.appendChild(downloadBtn);
+                        
+                        // 将新结果插入到output的顶部
+                        output.insertBefore(resultContainer, output.firstChild);
                         URL.revokeObjectURL(url);
                     };
                     img.src = url;
                     
-                    output.innerHTML = `<img src="${url}" alt="Compressed Image" style="max-width: 100%; height: auto;">`;
-                    downloadButton.style.display = 'inline-block';
                 } catch (error) {
                     console.error('Error compressing image:', error);
                     info.innerHTML = '<div class="error">Error compressing image. Please try a different image or settings.</div>';
-                    output.innerHTML = '';
-                    downloadButton.style.display = 'none';
+                    // 不清空output，保留之前的结果
                 }
             });
 
-            document.getElementById('downloadButton').addEventListener('click', () => {
-                if (!compressedBlob) {
-                    alert('No compressed image available.');
-                    return;
-                }
-
-                const format = document.getElementById('format').value;
-                const extension = format === 'jpeg' ? 'jpg' : 'png';
-                const url = URL.createObjectURL(compressedBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `compressed-image.${extension}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
+            
         }
 
         run();
