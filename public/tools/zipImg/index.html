@@ -16,11 +16,15 @@
         }
 
         .container {
+            display: flex;
+            flex-direction: column;
             padding: 16px;
             background-color: white;
             text-align: center;
             width: 100vw;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         input[type="file"] {
@@ -42,10 +46,6 @@
             background-color: #45a049;
         }
 
-        #output {
-            margin-top: 1rem;
-        }
-
         select {
             padding: 0.5rem;
             font-size: 1rem;
@@ -64,12 +64,18 @@
         }
 
         .drop-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             border: 2px dashed #ccc;
             border-radius: 8px;
             padding: 2rem;
             text-align: center;
             cursor: pointer;
+            height: 200px;
             transition: all 0.3s ease;
+            margin-bottom: 16px;
         }
 
         .drop-area .icon {
@@ -88,7 +94,6 @@
         }
 
         #fileInfo {
-            margin: 0.5rem 0;
             font-size: 0.9rem;
             color: #666;
         }
@@ -187,8 +192,39 @@
             margin-top: 10px;
         }
 
+        .stats .value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
         .result-diff {
             display: flex;
+            overflow: hidden;
+            flex-grow: 1;
+            align-items: start;
+        }
+
+        .result-diff-split {
+            width: 1px;
+            margin: 0 12px;
+            height: 100%;
+            background-color: #ddd;
+        }
+
+        #originalImageContainer {
+            width: 50%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+
+        #output {
+            width: 50%;
+            height: 100%;
+            overflow: auto;
         }
     </style>
 </head>
@@ -200,7 +236,6 @@
             <div>Drag & drop an image here or click to select</div>
             <input type="file" id="imageInput" accept="image/*" style="display: none;">
         </div>
-        <div id="fileInfo"></div>
         <div class="tools">
             <label for="quality">Quality:</label>
             <div class="quality-control">
@@ -216,10 +251,15 @@
             <button id="compressButton">Compress Image</button>
         </div>
         <div class="result-diff">
-            <div id="originalImageContainer" style="margin: 10px 0; display: none;">
-                <h3>Original Image:</h3>
+            <div id="originalImageContainer" style="display: none;">
+                <div style="display: flex;align-items: center;margin-bottom: 12px;">
+                    <span>Original Image:</span>
+                    <div id="fileInfo"></div>
+                </div>
                 <img id="originalImage" src="" alt="Original Image"
                     style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div class="result-diff-split">
             </div>
             <div id="output"></div>
         </div>
@@ -260,12 +300,13 @@
             imageInput.addEventListener('change', (event) => {
                 if (event.target.files.length) {
                     selectedFile = event.target.files[0];
-                    fileInfo.textContent = `Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+                    fileInfo.textContent = `(${(selectedFile.size / 1024).toFixed(2)} KB)`;
 
                     // 显示原图
                     const originalImageContainer = document.getElementById('originalImageContainer');
                     const originalImage = document.getElementById('originalImage');
                     const reader = new FileReader();
+                    dropArea.style.display = 'none';
                     reader.onload = function (e) {
                         originalImage.src = e.target.result;
                         originalImageContainer.style.display = 'block';
@@ -327,6 +368,7 @@
                 const originalImageContainer = document.getElementById('originalImageContainer');
                 const originalImage = document.getElementById('originalImage');
                 const reader = new FileReader();
+                dropArea.style.display = 'none';
                 reader.onload = function (e) {
                     originalImage.src = e.target.result;
                     originalImageContainer.style.display = 'block';
@@ -393,7 +435,7 @@
 
                         // 为每个结果创建独立的下载按钮
                         const downloadBtn = document.createElement('button');
-                        downloadBtn.textContent = 'Download Image';
+                        downloadBtn.textContent = 'Download';
                         downloadBtn.className = 'download-btn';
                         downloadBtn.onclick = function () {
                             // 根据ID找到对应的图片数据
@@ -414,10 +456,10 @@
                         const stats = document.createElement('div');
                         stats.className = 'stats';
                         stats.innerHTML = `
-                            <strong>Quality: ${quality}</strong>
-                            <div>Image Size: ${img.width} x ${img.height}</div>
-                            <div>File Size: ${compressedSizeInKB} KB</div>
-                            <div>Compression Ratio: ${compressionRatio.toFixed(2)}%</div>
+                            <div><div>Quality:</div><div class="value">${quality}</div></div>
+                            <div><div>Image Size:</div><div class="value">${img.width} x ${img.height}</div></div>
+                            <div><div>File Size:</div><div class="value">${compressedSizeInKB} KB</div></div>
+                            <div><div>Ratio:</div><div class="value">${compressionRatio.toFixed(2)}%</div></div>
                         `;
                         resultContainer.appendChild(stats);
                         stats.appendChild(downloadBtn);
