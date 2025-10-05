@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unix时间戳转换工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .tool-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .tool-section h2 {
+            color: #3498db;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .input-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .input-wrapper {
+            height: 46px;
+            position: relative;
+            width: 100%;
+        }
+
+        .input-section input {
+            width: 100%;
+            padding: 12px;
+            height: 46px;
+            padding-right: 40px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-section input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .clear-input {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 20px;
+            color: #999;
+            display: none;
+            user-select: none;
+        }
+
+        .clear-input:hover {
+            color: #e74c3c;
+        }
+
+        .example {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .format-options {
+            margin: 15px 0;
+        }
+
+        .format-option {
+            margin-bottom: 8px;
+        }
+
+        .format-option label {
+            font-weight: normal;
+            color: #34495e;
+            cursor: pointer;
+        }
+
+        .format-option input {
+            margin-right: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-shrink: 0;
+            margin-left: 16px;
+            flex-wrap: wrap;
+        }
+
+        .button-group button {
+            padding: 12px 20px;
+            border: none;
+            height: 46px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .button-group button:hover {
+            opacity: 0.9;
+        }
+
+        #convertToDateBtn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #convertToTimestampBtn {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #clearBtn1,
+        #clearBtn2 {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        #nowBtn1,
+        #nowBtn2 {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            display: flex;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background-color: #fff;
+            min-height: 60px;
+        }
+
+        .result-section label {
+            display: block;
+            margin-right: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        #currentTime {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .button-group button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #333;">Unix时间戳转换工具</h1>
+        <p class="description">支持日期与时间戳互转，可选择10位或13位时间戳</p>
+
+        <div class="current-time" id="currentTime">
+            当前时间：--:--:--
+        </div>
+
+        <!-- Unix时间戳转日期工具 -->
+        <div class="tool-section">
+            <h2>Unix时间戳转日期</h2>
+            <div class="input-section">
+                <div style="display: flex;">
+                    <div class="input-wrapper">
+                        <input type="text" id="timestampInput" placeholder="请输入Unix时间戳，如：1701427200 或 1701427200000">
+                        <span id="clearTimestampInput" class="clear-input" title="清空">×</span>
+                    </div>
+                    <div class="button-group">
+                        <button id="nowBtn1">填入当前时间戳</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="format-options">
+                <div class="format-option">
+                    <label>
+                        <input type="radio" name="timestampFormat1" value="10" checked> 10位时间戳（秒）
+                    </label>
+                </div>
+                <div class="format-option">
+                    <label>
+                        <input type="radio" name="timestampFormat1" value="13"> 13位时间戳（毫秒）
+                    </label>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <label>转换结果：</label>
+                <div id="result1">
+                    <p style="color: #7f8c8d; text-align: center;">请输入Unix时间戳</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日期转Unix时间戳工具 -->
+        <div class="tool-section">
+            <h2>日期转Unix时间戳</h2>
+            <div class="input-section">
+                <div style="display: flex;">
+                    <div class="input-wrapper">
+                        <input type="text" id="dateInput" placeholder="请输入日期，如：2023-12-01 12:00:00">
+                        <span id="clearDateInput" class="clear-input" title="清空">×</span>
+                    </div>
+                    <div class="button-group">
+                        <button id="nowBtn2">填入当前日期</button>
+                    </div>
+                </div>
+                <div class="example">
+                    <strong>支持的日期格式：</strong>
+                    <span>2023-12-01 12:00:00、2023/12/01 12:00:00、2023-12-01</span>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <label>转换结果：</label>
+                <div id="result2">
+                    <p style="color: #7f8c8d; text-align: center;">请输入日期并点击"转换为时间戳"按钮</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">已复制到剪贴板</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 元素获取
+            const timestampInput = document.getElementById('timestampInput');
+            const dateInput = document.getElementById('dateInput');
+            const convertToDateBtn = document.getElementById('convertToDateBtn');
+            const convertToTimestampBtn = document.getElementById('convertToTimestampBtn');
+            const clearBtn1 = document.getElementById('clearBtn1');
+            const clearBtn2 = document.getElementById('clearBtn2');
+            const nowBtn1 = document.getElementById('nowBtn1');
+            const nowBtn2 = document.getElementById('nowBtn2');
+            const result1 = document.getElementById('result1');
+            const result2 = document.getElementById('result2');
+            const notification = document.getElementById('notification');
+            const currentTime = document.getElementById('currentTime');
+
+            // 更新当前时间显示
+            function updateCurrentTime() {
+                const now = new Date();
+                currentTime.textContent = '当前时间：' + now.toLocaleString('zh-CN');
+            }
+
+            // 初始化时更新一次
+            updateCurrentTime();
+
+            // 每秒更新一次当前时间
+            setInterval(updateCurrentTime, 1000);
+
+            // 输入框清空图标事件
+            const clearTimestampInput = document.getElementById('clearTimestampInput');
+
+            clearTimestampInput.addEventListener('click', function () {
+                timestampInput.value = '';
+                result1.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入Unix时间戳</p>';
+                clearTimestampInput.style.display = 'none';
+            });
+
+            // 输入框清空图标事件
+            const clearDateInput = document.getElementById('clearDateInput');
+
+            clearDateInput.addEventListener('click', function () {
+                dateInput.value = '';
+                result2.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入日期</p>';
+                clearDateInput.style.display = 'none';
+            });
+
+            // 实时监听日期输入框变化
+            dateInput.addEventListener('input', function () {
+                // 控制清空图标的显示和隐藏
+                if (dateInput.value) {
+                    clearDateInput.style.display = 'block';
+                } else {
+                    clearDateInput.style.display = 'none';
+                }
+
+                // 延迟执行转换，避免输入过程中频繁触发
+                setTimeout(convertDateToTimestamp, 300);
+            });
+
+            // 实时监听时间戳输入框变化
+            timestampInput.addEventListener('input', function () {
+                // 控制清空图标的显示和隐藏
+                if (timestampInput.value) {
+                    clearTimestampInput.style.display = 'block';
+                } else {
+                    clearTimestampInput.style.display = 'none';
+                }
+
+                // 延迟执行转换，避免输入过程中频繁触发
+                setTimeout(convertTimestampToDate, 300);
+            });
+
+            // 填入当前时间戳按钮事件
+            nowBtn1.addEventListener('click', function () {
+                const now = Date.now();
+                timestampInput.value = now;
+                // 触发输入事件以自动转换
+                const inputEvent = new Event('input', { bubbles: true });
+                timestampInput.dispatchEvent(inputEvent);
+            });
+
+            // 填入当前日期按钮事件
+            nowBtn2.addEventListener('click', function () {
+                const now = new Date();
+                dateInput.value = now.toLocaleString('zh-CN');
+                // 触发输入事件以自动转换
+                const inputEvent = new Event('input', { bubbles: true });
+                dateInput.dispatchEvent(inputEvent);
+            });
+
+            // Unix时间戳转日期函数
+            function convertTimestampToDate() {
+                const timestamp = timestampInput.value.trim();
+
+                // 如果输入为空，显示默认提示信息
+                if (!timestamp) {
+                    result1.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入Unix时间戳</p>';
+                    return;
+                }
+
+                // 验证是否为纯数字
+                if (!/^\d+$/.test(timestamp)) {
+                    result1.innerHTML = '<div class="error">请输入合法时间戳</div>';
+                    return;
+                }
+
+                try {
+                    // 自动判断时间戳位数
+                    let format;
+                    if (timestamp.length === 10) {
+                        format = '10';
+                    } else if (timestamp.length === 13) {
+                        format = '13';
+                    } else {
+                        // 如果不是10位或13位，尝试作为10位处理
+                        format = '10';
+                    }
+
+                    // 时间戳转日期
+                    const date = timestampToDate(timestamp, format);
+                    result1.innerHTML = `
+                        <div style="padding: 10px;">
+                            <div style="margin-bottom: 10px;"><strong>输入时间戳：</strong> ${timestamp}</div>
+                            <div style="margin-bottom: 10px;"><strong>转换结果：</strong> ${date}</div>
+                            <div><strong>时间戳位数：</strong> ${timestamp.length}位 (${format === '10' ? '秒' : '毫秒'})</div>
+                        </div>
+                    `;
+                } catch (error) {
+                    result1.innerHTML = '<div class="error">请输入合法时间戳</div>';
+                }
+            }
+
+            // 日期转Unix时间戳函数
+            function convertDateToTimestamp() {
+                const dateStr = dateInput.value.trim();
+
+                // 如果输入为空，显示默认提示信息
+                if (!dateStr) {
+                    result2.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入日期</p>';
+                    return;
+                }
+
+                try {
+                    // 日期转时间戳（同时生成10位和13位）
+                    const timestamp10 = dateToTimestamp(dateStr, '10');
+                    const timestamp13 = dateToTimestamp(dateStr, '13');
+
+                    if (timestamp10 === null || timestamp13 === null) {
+                        result2.innerHTML = '<div class="error">请输入合法日期格式</div>';
+                        return;
+                    }
+
+                    result2.innerHTML = `
+                        <div>
+                            <div style="margin-bottom: 10px;"><strong>输入日期：</strong> ${dateStr}</div>
+                            <div style="margin-bottom: 10px;"><strong>10位时间戳（秒）：</strong> ${timestamp10}</div>
+                            <div style="margin-bottom: 10px;"><strong>13位时间戳（毫秒）：</strong> ${timestamp13}</div>
+                        </div>
+                    `;
+                } catch (error) {
+                    result2.innerHTML = '<div class="error">请输入合法日期格式</div>';
+                }
+            }
+
+            // 时间戳转日期
+            function timestampToDate(timestamp, format) {
+                let date;
+                if (format === '10') {
+                    // 10位时间戳（秒）
+                    date = new Date(parseInt(timestamp) * 1000);
+                } else {
+                    // 13位时间戳（毫秒）
+                    date = new Date(parseInt(timestamp));
+                }
+
+                // 检查日期是否有效
+                if (isNaN(date.getTime())) {
+                    throw new Error('无效的时间戳');
+                }
+
+                return date.toLocaleString('zh-CN');
+            }
+
+            // 日期转时间戳
+            function dateToTimestamp(dateStr, format) {
+                // 尝试解析日期字符串
+                let date;
+
+                // 处理不同的日期格式
+                if (dateStr.includes('-') || dateStr.includes('/')) {
+                    // 替换日期分隔符为标准格式
+                    const standardizedDate = dateStr.replace(/\//g, '-');
+                    date = new Date(standardizedDate);
+                } else {
+                    // 尝试直接解析
+                    date = new Date(dateStr);
+                }
+
+                // 如果日期无效，返回null
+                if (isNaN(date.getTime())) {
+                    return null;
+                }
+
+                // 根据格式返回对应的时间戳
+                if (format === '10') {
+                    // 10位时间戳（秒）
+                    return Math.floor(date.getTime() / 1000).toString();
+                } else {
+                    // 13位时间戳（毫秒）
+                    return date.getTime().toString();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
