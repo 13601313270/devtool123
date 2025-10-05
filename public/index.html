@@ -1,13 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="">
 
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <link rel="icon" href="./favicon.ico">
-  <title>开发工具合集</title>
-  <link href="https://www.devtool123.com/css/app.405387c9.css" rel="stylesheet">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>
+    <%= htmlWebpackPlugin.options.title %>
+  </title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5VKG2P1E8V"></script>
   <script>
@@ -20,127 +26,51 @@
 </head>
 
 <body>
-  <div class="home">
-    <div class="head">
-      <h1>&lt;/&gt;&nbsp;&nbsp;开发工具合集</h1>
-      <div class="userIcon" id="userIcon">
-        <img src="./user.svg" alt="用户头像">
-        <div class="hoverPanelOuter">
-          <div class="hoverPanel" id="hoverPanel">
-            <div class="close" id="panelClose">
-              <img src="./close.svg" alt="关闭">
-            </div>
-            <img src="./user.svg" alt="用户头像">
-            <div class="userName">访客用户</div>
-            <div style="flex-grow: 1;"></div>
-            <div class="signout" id="signOut">Sign out</div>
+  <noscript>
+    <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled.
+        Please enable it to continue.</strong>
+  </noscript>
+  <div id="app">
+    <div class="home">
+      <div class="head">
+        <h1>&lt;/&gt;&nbsp;&nbsp;开发工具合集</h1>
+        <div></div>
+      </div>
+      <div class="grid-container">
+        <div class="grid-item" style="grid-area: span 1 / span 1;">
+          <div class="tool-content">
+            <h3>JSON格式化</h3>
+            <p>美化和格式化JSON数据</p>
+          </div>
+        </div>
+        <div class="grid-item" style="grid-area: span 1 / span 1;">
+          <div class="tool-content">
+            <h3>MD5</h3>
+            <p>计算字符串的MD5哈希值</p>
+          </div>
+        </div>
+        <div class="grid-item" style="grid-area: span 1 / span 1;">
+          <div class="tool-content">
+            <h3>图片压缩</h3>
+            <p>压缩图片文件大小</p>
+          </div>
+        </div>
+        <div class="grid-item" style="grid-area: span 1 / span 1;">
+          <div class="tool-content">
+            <h3>Unix时间戳转换</h3>
+            <p>转换Unix时间戳为日期</p>
+          </div>
+        </div>
+        <div class="grid-item" style="grid-area: span 1 / span 1;">
+          <div class="tool-content">
+            <h3>Base64编码</h3>
+            <p>Base64编解码工具</p>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="grid-container" id="gridContainer">
-      <!-- 工具项将通过JavaScript动态生成 -->
-    </div>
+    </div><!---->
   </div>
-
-  <div class="overlay" id="overlay"></div>
-  <div class="dialog" id="dialog">
-    <div class="title" id="dialogTitle">
-      工具名称
-      <div class="close" id="dialogClose">
-        <img src="./close.svg" alt="关闭">
-      </div>
-    </div>
-    <iframe id="toolFrame"></iframe>
-  </div>
-
-  <script>
-    // 工具数据
-    const tools = [
-      { id: 1, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 1, height: 1, url: './tools/json/index.html' },
-      { id: 2, name: 'MD5', description: '计算字符串的MD5哈希值', width: 1, height: 1, url: './tools/md5/index.html' },
-      { id: 3, name: '图片压缩', description: '压缩图片文件大小', width: 1, height: 1, url: './tools/zipImg/index.html' },
-      { id: 4, name: 'Unix时间戳转换', description: '转换Unix时间戳为日期', width: 1, height: 1, url: './tools/unix/index.html' },
-      { id: 5, name: 'Base64编码', description: 'Base64编解码工具', width: 1, height: 1, url: './tools/base64/index.html' }
-    ];
-
-    // 初始化工具网格
-    function initTools() {
-      const gridContainer = document.getElementById('gridContainer');
-      
-      tools.forEach(tool => {
-        const gridItem = document.createElement('div');
-        gridItem.className = 'grid-item';
-        gridItem.style.gridColumn = `span ${tool.width}`;
-        gridItem.style.gridRow = `span ${tool.height}`;
-        gridItem.innerHTML = `
-          <div class="tool-content">
-            <h3>${tool.name}</h3>
-            <p>${tool.description}</p>
-          </div>
-        `;
-        
-        gridItem.addEventListener('click', () => openTool(tool));
-        gridContainer.appendChild(gridItem);
-      });
-    }
-
-    // 打开工具弹窗
-    function openTool(tool) {
-      const dialog = document.getElementById('dialog');
-      const dialogTitle = document.getElementById('dialogTitle');
-      const toolFrame = document.getElementById('toolFrame');
-      const overlay = document.getElementById('overlay');
-      
-      dialogTitle.firstChild.textContent = tool.name;
-      toolFrame.src = tool.url;
-      
-      dialog.classList.add('show');
-      overlay.classList.add('show');
-    }
-
-    // 关闭工具弹窗
-    function closeTool() {
-      const dialog = document.getElementById('dialog');
-      const toolFrame = document.getElementById('toolFrame');
-      const overlay = document.getElementById('overlay');
-      
-      dialog.classList.remove('show');
-      overlay.classList.remove('show');
-      toolFrame.src = '';
-    }
-
-    // 切换用户面板显示
-    function toggleUserPanel() {
-      const panel = document.getElementById('hoverPanel');
-      panel.classList.toggle('show');
-    }
-
-    // 关闭用户面板
-    function closeUserPanel() {
-      const panel = document.getElementById('hoverPanel');
-      panel.classList.remove('show');
-    }
-
-    // 退出登录
-    function signOut() {
-      alert('退出登录功能在纯前端版本中仅作演示');
-      closeUserPanel();
-    }
-
-    // 页面加载完成后初始化
-    document.addEventListener('DOMContentLoaded', function() {
-      initTools();
-      
-      // 绑定事件监听器
-      document.getElementById('userIcon').addEventListener('click', toggleUserPanel);
-      document.getElementById('panelClose').addEventListener('click', closeUserPanel);
-      document.getElementById('dialogClose').addEventListener('click', closeTool);
-      document.getElementById('overlay').addEventListener('click', closeTool);
-      document.getElementById('signOut').addEventListener('click', signOut);
-    });
-  </script>
+  <!-- built files will be auto injected -->
 </body>
 
 </html>
