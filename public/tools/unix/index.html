@@ -390,20 +390,8 @@
             const notification = document.getElementById('notification');
             const currentTime = document.getElementById('currentTime');
 
-            // 更新当前时间显示
-            function updateCurrentTime() {
-                const now = new Date();
-                currentTime.textContent = '当前时间：' + now.toLocaleString('zh-CN');
-            }
-
-            // 初始化时更新一次
-            updateCurrentTime();
-
             // 初始化时间戳输入框的placeholder文本
             updateTimestampPlaceholder();
-
-            // 每秒更新一次当前时间
-            setInterval(updateCurrentTime, 1000);
 
             // 输入框清空图标事件
             const clearTimestampInput = document.getElementById('clearTimestampInput');
