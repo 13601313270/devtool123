@@ -20,7 +20,7 @@
             background-color: white;
             text-align: center;
             width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         input[type="file"] {
@@ -186,6 +186,10 @@
             border-radius: 8px;
             margin-top: 10px;
         }
+
+        .result-diff {
+            display: flex;
+        }
     </style>
 </head>
 
@@ -211,8 +215,14 @@
             <div style="flex-grow: 1;"></div>
             <button id="compressButton">Compress Image</button>
         </div>
-        <div id="info"></div>
-        <div id="output"></div>
+        <div class="result-diff">
+            <div id="originalImageContainer" style="margin: 10px 0; display: none;">
+                <h3>Original Image:</h3>
+                <img id="originalImage" src="" alt="Original Image"
+                    style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div id="output"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -251,6 +261,16 @@
                 if (event.target.files.length) {
                     selectedFile = event.target.files[0];
                     fileInfo.textContent = `Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+
+                    // 显示原图
+                    const originalImageContainer = document.getElementById('originalImageContainer');
+                    const originalImage = document.getElementById('originalImage');
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        originalImage.src = e.target.result;
+                        originalImageContainer.style.display = 'block';
+                    };
+                    reader.readAsDataURL(selectedFile);
                 }
             });
 
@@ -302,6 +322,17 @@
 
                 selectedFile = file;
                 fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+
+                // 显示原图
+                const originalImageContainer = document.getElementById('originalImageContainer');
+                const originalImage = document.getElementById('originalImage');
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    originalImage.src = e.target.result;
+                    originalImageContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+
                 // 同步到隐藏的input元素
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
