@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="head">
-      <h1>开发工具合集</h1>
+      <h1>&lt;/&gt;&nbsp;&nbsp;开发工具合集</h1>
       <div class="userIcon" v-if="userInfo?.user_metadata.full_name">
         <img v-if="avatarUrl" :src="avatarUrl" alt="" @click="userHover = true" />
         <img v-else src="../assets/user.svg" alt="" @click="userHover = true" />
