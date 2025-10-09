@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色拾取器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+        }
+
+        .description {
+            text-align: center;
+            color: #9f9f9f;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #fafafa;
+        }
+
+        .upload-area:hover {
+            border-color: #42b983;
+            background-color: #f0f9f5;
+        }
+
+        .upload-area.dragover {
+            border-color: #42b983;
+            background-color: #e8f5e9;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #42b983;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 20px 0;
+            display: none;
+        }
+
+        #imageCanvas {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        .magnifier {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border: 2px solid #42b983;
+            border-radius: 50%;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 100;
+            overflow: hidden;
+            transform: translate(-50%, -50%);
+        }
+
+        .magnifier-canvas {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+        }
+
+        .color-info {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #fafafa;
+            display: none;
+        }
+
+        .color-preview {
+            width: 60px;
+            height: 60px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 20px;
+        }
+
+        .color-details {
+            flex: 1;
+        }
+
+        .color-value {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .copy-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .coordinates {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #42b983;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .button-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background-color: #42b983;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #359c6d;
+        }
+
+        #clearBtn {
+            background-color: #ff6b6b;
+        }
+
+        #clearBtn:hover {
+            background-color: #e55c5c;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .format-option {
+            display: flex;
+            align-items: center;
+        }
+
+        .format-option input {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #333;">颜色拾取器</h1>
+        <p class="description">上传图片并点击任意位置获取颜色值</p>
+
+        <div class="input-section">
+            <label for="fileInput">选择图片：</label>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p>点击选择图片或拖拽图片到此处</p>
+                <p style="font-size: 12px; color: #999;">支持 JPG、PNG、GIF 格式</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="format-options">
+            <div class="format-option">
+                <input type="radio" id="hex" name="format" value="hex" checked>
+                <label for="hex">HEX (#FF0000)</label>
+            </div>
+            <div class="format-option">
+                <input type="radio" id="rgb" name="format" value="rgb">
+                <label for="rgb">RGB (255, 0, 0)</label>
+            </div>
+            <div class="format-option">
+                <input type="radio" id="rgba" name="format" value="rgba">
+                <label for="rgba">RGBA (255, 0, 0, 1)</label>
+            </div>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="imageCanvas"></canvas>
+            <div class="magnifier" id="magnifier">
+                <canvas class="magnifier-canvas" id="magnifierCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="color-info" id="colorInfo">
+            <div class="color-preview" id="colorPreview"></div>
+            <div class="color-details">
+                <div>拾取的颜色：</div>
+                <div class="color-value" id="colorValue">#FFFFFF</div>
+                <div class="coordinates" id="coordinates">(0, 0)</div>
+                <button class="copy-btn" id="copyBtn">复制颜色值</button>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="clearBtn">清空</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">已复制到剪贴板</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 获取DOM元素
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const imageCanvas = document.getElementById('imageCanvas');
+            const colorInfo = document.getElementById('colorInfo');
+            const colorPreview = document.getElementById('colorPreview');
+            const colorValue = document.getElementById('colorValue');
+            const coordinates = document.getElementById('coordinates');
+            const copyBtn = document.getElementById('copyBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const notification = document.getElementById('notification');
+            const formatRadios = document.getElementsByName('format');
+
+            let canvasContext = imageCanvas.getContext('2d');
+            let currentColor = null;
+            let currentCoordinates = { x: 0, y: 0 };
+            let magnifier = document.getElementById('magnifier');
+            let magnifierCanvas = document.getElementById('magnifierCanvas');
+            let magnifierContext = magnifierCanvas.getContext('2d');
+
+            // 点击上传区域触发文件选择
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 文件选择处理
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // 拖拽上传功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                uploadArea.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                uploadArea.classList.remove('dragover');
+            }
+
+            // 处理拖拽放置事件
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) {
+                    fileInput.files = files;
+                    handleFileSelect();
+                }
+            }
+
+            // 处理文件选择
+            function handleFileSelect() {
+                const file = fileInput.files[0];
+                if (!file || !file.type.match('image.*')) {
+                    alert('请选择一个有效的图片文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        // 设置画布尺寸
+                        imageCanvas.width = img.width;
+                        imageCanvas.height = img.height;
+
+                        // 绘制图片到画布
+                        canvasContext.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+                        canvasContext.drawImage(img, 0, 0);
+
+                        // 显示画布容器
+                        canvasContainer.style.display = 'block';
+
+                        // 隐藏上传区域
+                        uploadArea.style.display = 'none';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // 画布点击事件 - 获取颜色
+            imageCanvas.addEventListener('click', function (e) {
+                const rect = imageCanvas.getBoundingClientRect();
+                const scaleX = imageCanvas.width / rect.width;
+                const scaleY = imageCanvas.height / rect.height;
+
+                // 计算实际像素坐标
+                const x = Math.floor((e.clientX - rect.left) * scaleX);
+                const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+                // 确保坐标在有效范围内
+                if (x >= 0 && x < imageCanvas.width && y >= 0 && y < imageCanvas.height) {
+                    // 获取点击位置的颜色
+                    const pixel = canvasContext.getImageData(x, y, 1, 1);
+                    const data = pixel.data;
+
+                    // 存储颜色和坐标
+                    currentColor = {
+                        r: data[0],
+                        g: data[1],
+                        b: data[2],
+                        a: data[3]
+                    };
+                    currentCoordinates = { x, y };
+
+                    // 更新显示
+                    updateColorDisplay();
+                }
+            });
+
+            // 鼠标进入画布事件
+            imageCanvas.addEventListener('mouseenter', function (e) {
+                magnifier.style.display = 'block';
+            });
+
+            // 鼠标移出画布事件
+            imageCanvas.addEventListener('mouseleave', function (e) {
+                // magnifier.style.display = 'none';
+            });
+
+            // 鼠标在画布上移动事件 - 放大镜效果
+            imageCanvas.addEventListener('mousemove', function (e) {
+                const rect = imageCanvas.getBoundingClientRect();
+                const scaleX = imageCanvas.width / rect.width;
+                const scaleY = imageCanvas.height / rect.height;
+
+
+                // 计算实际像素坐标
+                const x = Math.floor((e.clientX - rect.left));
+                const y = Math.floor((e.clientY - rect.top));
+
+                // 更新放大镜位置
+                magnifier.style.left = x + 'px';//(e.clientX) + 'px';
+                magnifier.style.top = y + 'px';//(e.clientY) + 'px';
+
+                // 显示放大镜
+                magnifier.style.display = 'block';
+
+                // 绘制放大效果
+                const magnification = 2; // 放大倍数
+                const size = 150; // 放大镜尺寸
+
+                // 清除放大镜画布
+                magnifierContext.clearRect(0, 0, magnifierCanvas.width, magnifierCanvas.height);
+
+                // 绘制放大区域
+                magnifierContext.drawImage(
+                    imageCanvas,
+                    x * scaleX - size / (2 * magnification), y * scaleY - size / (2 * magnification),
+                    size / magnification, size / magnification,
+                    0, 0,
+                    size, size
+                );
+
+                // 绘制十字线
+                magnifierContext.strokeStyle = '#FF0000';
+                magnifierContext.lineWidth = 1;
+                magnifierContext.beginPath();
+                magnifierContext.moveTo(size / 2, 0);
+                magnifierContext.lineTo(size / 2, size);
+                magnifierContext.moveTo(0, size / 2);
+                magnifierContext.lineTo(size, size / 2);
+                magnifierContext.stroke();
+            });
+
+            // 更新颜色显示
+            function updateColorDisplay() {
+                if (!currentColor) return;
+
+                // 获取选中的颜色格式
+                let format = 'hex';
+                for (let i = 0; i < formatRadios.length; i++) {
+                    if (formatRadios[i].checked) {
+                        format = formatRadios[i].value;
+                        break;
+                    }
+                }
+
+                // 根据格式生成颜色值
+                let colorString = '';
+                switch (format) {
+                    case 'hex':
+                        colorString = rgbToHex(currentColor.r, currentColor.g, currentColor.b);
+                        break;
+                    case 'rgb':
+                        colorString = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+                        break;
+                    case 'rgba':
+                        const alpha = (currentColor.a / 255).toFixed(2);
+                        colorString = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${alpha})`;
+                        break;
+                }
+
+                // 更新UI
+                colorPreview.style.backgroundColor = colorString;
+                colorValue.textContent = colorString;
+                coordinates.textContent = `坐标: (${currentCoordinates.x}, ${currentCoordinates.y})`;
+                colorInfo.style.display = 'flex';
+            }
+
+            // RGB转HEX
+            function rgbToHex(r, g, b) {
+                return '#' + [r, g, b].map(x => {
+                    const hex = x.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('').toUpperCase();
+            }
+
+            // 复制颜色值到剪贴板
+            copyBtn.addEventListener('click', function () {
+                const text = colorValue.textContent;
+                navigator.clipboard.writeText(text).then(function () {
+                    // 显示通知
+                    notification.style.display = 'block';
+                    setTimeout(function () {
+                        notification.style.display = 'none';
+                    }, 2000);
+                }).catch(function (err) {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制');
+                });
+            });
+
+            // 清空按钮事件
+            clearBtn.addEventListener('click', function () {
+                // 重置文件输入
+                fileInput.value = '';
+
+                // 隐藏画布和颜色信息
+                canvasContainer.style.display = 'none';
+                colorInfo.style.display = 'none';
+
+                // 显示上传区域
+                uploadArea.style.display = 'block';
+
+                // 重置状态
+                currentColor = null;
+                currentCoordinates = { x: 0, y: 0 };
+            });
+
+            // 颜色格式切换事件
+            formatRadios.forEach(radio => {
+                radio.addEventListener('change', updateColorDisplay);
+            });
+        });
+    </script>
+</body>
+
+</html>
