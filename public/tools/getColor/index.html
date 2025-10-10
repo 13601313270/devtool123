@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #ffffff;
             margin: 0;
             padding: 15px;
         }
@@ -18,7 +18,7 @@
             margin: 0 auto;
             background-color: white;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); */
             padding: 15px;
         }
 
@@ -105,21 +105,25 @@
         }
 
         .color-info {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 15px;
-            border-radius: 4px;
-            background-color: #fafafa;
+            z-index: 100;
             display: none;
+            flex-direction: column;
         }
 
         .color-preview {
-            width: 60px;
-            height: 60px;
-            border: 1px solid #ddd;
+            width: 100%;
+            height: 80px;
             border-radius: 4px;
-            margin-right: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
         }
 
         .color-details {
@@ -129,13 +133,14 @@
         .color-item {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
 
         .color-item label {
             font-weight: bold;
             min-width: 50px;
             margin-right: 10px;
+            margin-bottom: 0;
         }
 
         .color-value {
@@ -156,6 +161,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
             margin-left: 10px;
+            white-space: nowrap;
         }
 
         .copy-btn:hover {
@@ -210,15 +216,92 @@
             background-color: #e55c5c;
         }
 
-        
+        .history-section {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 100;
+            display: none;
+        }
+
+        .history-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-history-btn {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .clear-history-btn:hover {
+            background-color: #e55c5c;
+        }
+
+        .history-colors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .history-color-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .history-color-item:hover {
+            transform: scale(1.1);
+            border-color: #42b983;
+        }
+
+        .history-color-item .color-value-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            display: none;
+            z-index: 100;
+        }
+
+        .history-color-item:hover .color-value-tooltip {
+            display: block;
+        }
+
+        .canvas-container {
+            margin-right: 330px; /* 为右侧固定元素留出空间 */
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1 style="text-align: center; color: #333;">颜色拾取器</h1>
+        <!-- <h1 style="text-align: center; color: #333;">颜色拾取器</h1> -->
         <p class="description">上传图片并点击任意位置获取颜色值</p>
-
         <div class="input-section">
             <label for="fileInput">选择图片：</label>
             <div class="upload-area" id="uploadArea">
@@ -251,7 +334,7 @@
                     <div class="color-value" id="rgbValue">rgb(255, 255, 255)</div>
                     <button class="copy-btn" data-target="rgbValue">复制</button>
                 </div>
-                <div class="color-item">
+                <div class="color-item" style="display: none;">
                     <label>RGBA:</label>
                     <div class="color-value" id="rgbaValue">rgba(255, 255, 255, 1.00)</div>
                     <button class="copy-btn" data-target="rgbaValue">复制</button>
@@ -272,6 +355,15 @@
 
         <div class="button-group">
             <button id="clearBtn">清空</button>
+        </div>
+
+        <!-- 历史颜色区域 -->
+        <div class="history-section" id="historySection">
+            <div class="history-title">
+                <span>历史颜色</span>
+                <button class="clear-history-btn" id="clearHistoryBtn">清空历史</button>
+            </div>
+            <div class="history-colors" id="historyColors"></div>
         </div>
     </div>
 
@@ -295,6 +387,10 @@
             const clearBtn = document.getElementById('clearBtn');
             const notification = document.getElementById('notification');
             const copyButtons = document.querySelectorAll('.copy-btn');
+            // 历史颜色相关元素
+            const historySection = document.getElementById('historySection');
+            const historyColors = document.getElementById('historyColors');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
             let canvasContext = imageCanvas.getContext('2d');
             let currentColor = null;
@@ -302,6 +398,10 @@
             let magnifier = document.getElementById('magnifier');
             let magnifierCanvas = document.getElementById('magnifierCanvas');
             let magnifierContext = magnifierCanvas.getContext('2d');
+            // 历史颜色数组
+            let colorHistory = [];
+            // 最大历史颜色数量
+            const maxHistoryCount = 20;
 
             // 点击上传区域触发文件选择
             uploadArea.addEventListener('click', () => {
@@ -417,7 +517,7 @@
 
             // 鼠标移出画布事件
             imageCanvas.addEventListener('mouseleave', function (e) {
-                // magnifier.style.display = 'none';
+                magnifier.style.display = 'none';
             });
 
             // 鼠标在画布上移动事件 - 放大镜效果
@@ -488,6 +588,89 @@
                 cmykValue.textContent = cmykColor;
                 coordinates.textContent = `坐标: (${currentCoordinates.x}, ${currentCoordinates.y})`;
                 colorInfo.style.display = 'flex';
+                
+                // 添加到历史颜色
+                addToHistory(hexColor, rgbColor, rgbaColor, hslColor, cmykColor);
+            }
+
+            // 添加颜色到历史记录
+            function addToHistory(hex, rgb, rgba, hsl, cmyk) {
+                // 检查颜色是否已存在于历史记录中
+                const existingIndex = colorHistory.findIndex(item => item.hex === hex);
+                
+                // 如果已存在，移除它
+                if (existingIndex !== -1) {
+                    colorHistory.splice(existingIndex, 1);
+                }
+                
+                // 添加到历史记录开头
+                colorHistory.unshift({
+                    hex: hex,
+                    rgb: rgb,
+                    rgba: rgba,
+                    hsl: hsl,
+                    cmyk: cmyk
+                });
+                
+                // 限制历史记录数量
+                if (colorHistory.length > maxHistoryCount) {
+                    colorHistory = colorHistory.slice(0, maxHistoryCount);
+                }
+                
+                // 更新历史颜色显示
+                updateHistoryDisplay();
+            }
+
+            // 更新历史颜色显示
+            function updateHistoryDisplay() {
+                // 清空历史颜色容器
+                historyColors.innerHTML = '';
+                
+                // 如果有历史颜色，显示历史区域
+                if (colorHistory.length > 0) {
+                    historySection.style.display = 'block';
+                    
+                    // 添加每个历史颜色项
+                    colorHistory.forEach(color => {
+                        const colorItem = document.createElement('div');
+                        colorItem.className = 'history-color-item';
+                        colorItem.style.backgroundColor = color.hex;
+                        
+                        // 添加颜色值提示
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'color-value-tooltip';
+                        tooltip.textContent = color.hex;
+                        colorItem.appendChild(tooltip);
+                        
+                        // 点击事件：将历史颜色应用到当前显示
+                        colorItem.addEventListener('click', () => {
+                            // 更新当前颜色
+                            const hex = color.hex;
+                            const rgbMatch = color.rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                            if (rgbMatch) {
+                                currentColor = {
+                                    r: parseInt(rgbMatch[1]),
+                                    g: parseInt(rgbMatch[2]),
+                                    b: parseInt(rgbMatch[3]),
+                                    a: 255
+                                };
+                                
+                                // 更新UI显示
+                                colorPreview.style.backgroundColor = hex;
+                                hexValue.textContent = hex;
+                                rgbValue.textContent = color.rgb;
+                                rgbaValue.textContent = color.rgba;
+                                hslValue.textContent = color.hsl;
+                                cmykValue.textContent = color.cmyk;
+                                colorInfo.style.display = 'flex';
+                            }
+                        });
+                        
+                        historyColors.appendChild(colorItem);
+                    });
+                } else {
+                    historySection.style.display = 'none';
+                }
             }
 
             // RGB转HEX
@@ -595,7 +778,14 @@
                 currentCoordinates = { x: 0, y: 0 };
             });
 
-            
+            // 清空历史记录按钮事件
+            clearHistoryBtn.addEventListener('click', function () {
+                // 清空历史颜色数组
+                colorHistory = [];
+                
+                // 更新历史颜色显示
+                updateHistoryDisplay();
+            });
         });
     </script>
 </body>
