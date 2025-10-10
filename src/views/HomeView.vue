@@ -53,6 +53,7 @@
     <iframe v-else-if="activeTool.id === 4" src="./tools/unix/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 5" src="./tools/base64/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 6" src="./tools/getColor/index.html" frameborder="0" />
+    <iframe v-else-if="activeTool.id === 7" src="./tools/QRCode/index.html" frameborder="0" />
     <div v-else>{{ activeTool }}</div>
   </div>
 </template>
@@ -92,6 +93,7 @@ const tools = ref<Tool[]>([
   { id: 4, name: 'Unix时间戳转换', description: '转换Unix时间戳为日期', width: 1, height: 1 },
   { id: 5, name: 'Base64编码', description: 'Base64编解码工具', width: 1, height: 1 },
   { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
+  { id: 7, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
   // { id: 1, name: '代码格式化', description: '美化和格式化代码', width: 1, height: 1 },
   // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
   // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
@@ -99,7 +101,6 @@ const tools = ref<Tool[]>([
   // { id: 8, name: '单位转换', description: '常用单位换算', width: 1, height: 1 },
   // { id: 9, name: '密码生成', description: '安全密码生成器', width: 1, height: 1 },
   // { id: 10, name: 'Markdown编辑器', description: '实时预览Markdown文档', width: 2, height: 1 },
-  // { id: 12, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
   // { id: 13, name: '文件转换', description: '文件格式转换工具', width: 2, height: 1 },
   // { id: 14, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 2, height: 1 },
   // { id: 15, name: 'XML格式化', description: '美化和格式化XML数据', width: 2, height: 1 },
