@@ -19,14 +19,14 @@
         </div>
       </div>
       <div v-else>
-        <div class="loginButton" @click="signInWithGoogle('google')">
+        <!-- <div class="loginButton" @click="signInWithGoogle('google')">
           <img src="../assets/google.svg" alt="">
           <span>Log in</span>
         </div>
         <div class="loginButton" @click="signInWithGoogle('github')">
           <img src="../assets/google.svg" alt="">
           <span>github</span>
-        </div>
+        </div> -->
       </div>
     </div>
 
