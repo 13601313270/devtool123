@@ -54,6 +54,7 @@
     <iframe v-else-if="activeTool.id === 5" src="./tools/base64/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 6" src="./tools/getColor/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 7" src="./tools/QRCode/index.html" frameborder="0" />
+    <iframe v-else-if="activeTool.id === 8" src="./tools/textDiff/index.html" frameborder="0" />
     <div v-else>{{ activeTool }}</div>
   </div>
 </template>
@@ -94,6 +95,7 @@ const tools = ref<Tool[]>([
   { id: 5, name: 'Base64编码', description: 'Base64编解码工具', width: 1, height: 1 },
   { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
   { id: 7, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
+  { id: 8, name: '文本对比', description: '对比两个文本的差异', width: 1, height: 1 },
   // { id: 1, name: '代码格式化', description: '美化和格式化代码', width: 1, height: 1 },
   // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
   // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },

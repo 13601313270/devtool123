@@ -7,7 +7,8 @@
     <title>文本对比工具</title>
     <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -132,16 +133,6 @@
             flex-grow: 1;
         }
 
-        #hideResultBtn {
-            background-color: #95a5a6;
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-
-        #hideResultBtn:hover {
-            background-color: #7f8c8d;
-        }
-
         /* 文本对比样式 */
         .diff-container {
             font-family: 'Courier New', monospace;
@@ -218,22 +209,44 @@
         .legend-unchanged {
             background-color: #f8f9fa;
         }
-        
+
         .CodeMirror-focused {
             border-color: #42b983;
         }
-        
+
         /* CodeMirror差异行样式 */
         .cm-s-default .diff-equal {
             background-color: #f8f9fa;
         }
-        
+
         .cm-s-default .diff-delete {
             background-color: #ffeef0;
         }
-        
+
         .cm-s-default .diff-insert {
             background-color: #e6ffed;
+        }
+
+        /* 导航按钮样式 */
+        #diffNavigation button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 4px;
+            transition: background-color 0.3s;
+        }
+
+        #diffNavigation button:hover {
+            background-color: #2980b9;
+        }
+
+        #diffNavigation button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -252,34 +265,20 @@
             </div>
         </div>
 
+        <!-- 添加差异数量显示和导航按钮 -->
+        <div id="diffNavigation" style="display: none; text-align: center; margin: 10px 0;">
+            <p id="diffCount" style="margin: 10px 0; font-weight: bold;"></p>
+            <div>
+                <button id="firstDiffBtn">第一个</button>
+                <button id="prevDiffBtn">上一个</button>
+                <button id="nextDiffBtn">下一个</button>
+                <button id="lastDiffBtn">最后一个</button>
+            </div>
+        </div>
         <div class="button-group">
             <button id="compareBtn">对比文本</button>
             <button id="swapBtn">交换文本</button>
             <button id="clearBtn">清空</button>
-        </div>
-
-        <div class="result-section">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>对比结果</h2>
-                <button id="hideResultBtn">隐藏结果</button>
-            </div>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color legend-added"></div>
-                    <span>新增内容</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color legend-removed"></div>
-                    <span>删除内容</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color legend-unchanged"></div>
-                    <span>未变更内容</span>
-                </div>
-            </div>
-            <div id="result">
-                <p style="color: #7f8c8d; text-align: center;">请输入要对比的文本并点击"对比文本"按钮</p>
-            </div>
         </div>
     </div>
 
@@ -311,7 +310,6 @@
             const compareBtn = document.getElementById('compareBtn');
             const clearBtn = document.getElementById('clearBtn');
             const swapBtn = document.getElementById('swapBtn');
-            const hideResultBtn = document.getElementById('hideResultBtn');
             const resultSection = document.querySelector('.result-section');
             const result = document.getElementById('result');
 
@@ -324,6 +322,11 @@
                 newEditor.setValue('');
                 result.innerHTML = '<p style="color: #7f8c8d; text-align: center;">请输入要对比的文本并点击"对比文本"按钮</p>';
                 resultSection.style.display = 'none';
+
+                // 隐藏导航按钮
+                document.getElementById('diffNavigation').style.display = 'none';
+                window.diffData = [];
+                window.currentDiffIndex = -1;
             });
 
             // 交换文本按钮事件
@@ -333,9 +336,57 @@
                 newEditor.setValue(temp);
             });
 
-            // 隐藏结果按钮事件
-            hideResultBtn.addEventListener('click', function () {
-                resultSection.style.display = 'none';
+            // 添加导航按钮事件监听器
+            document.getElementById('firstDiffBtn').addEventListener('click', function () {
+                if (window.diffData && window.diffData.length > 0) {
+                    // 找到第一个差异项的索引（跳过equal类型）
+                    let firstIndex = 0;
+                    while (firstIndex < window.diffData.length && window.diffData[firstIndex].type === 'equal') {
+                        firstIndex++;
+                    }
+                    if (firstIndex < window.diffData.length) {
+                        scrollToDiff(firstIndex);
+                    }
+                }
+            });
+
+            document.getElementById('prevDiffBtn').addEventListener('click', function () {
+                if (window.diffData && window.diffData.length > 0 && window.currentDiffIndex > 0) {
+                    // 找到上一个差异项的索引（跳过equal类型）
+                    let prevIndex = window.currentDiffIndex - 1;
+                    while (prevIndex >= 0 && window.diffData[prevIndex].type === 'equal') {
+                        prevIndex--;
+                    }
+                    if (prevIndex >= 0) {
+                        scrollToDiff(prevIndex);
+                    }
+                }
+            });
+
+            document.getElementById('nextDiffBtn').addEventListener('click', function () {
+                if (window.diffData && window.diffData.length > 0 && window.currentDiffIndex < window.diffData.length - 1) {
+                    // 找到下一个差异项的索引（跳过equal类型）
+                    let nextIndex = window.currentDiffIndex + 1;
+                    while (nextIndex < window.diffData.length && window.diffData[nextIndex].type === 'equal') {
+                        nextIndex++;
+                    }
+                    if (nextIndex < window.diffData.length) {
+                        scrollToDiff(nextIndex);
+                    }
+                }
+            });
+
+            document.getElementById('lastDiffBtn').addEventListener('click', function () {
+                if (window.diffData && window.diffData.length > 0) {
+                    // 找到最后一个差异项的索引（跳过equal类型）
+                    let lastIndex = window.diffData.length - 1;
+                    while (lastIndex >= 0 && window.diffData[lastIndex].type === 'equal') {
+                        lastIndex--;
+                    }
+                    if (lastIndex >= 0) {
+                        scrollToDiff(lastIndex);
+                    }
+                }
             });
 
             // 文本对比函数
@@ -351,6 +402,8 @@
                 // 执行文本对比
                 const diffResult = diffLines(original, newer);
                 displayDiff(diffResult);
+                // 显示差异数量和导航按钮
+                showDiffNavigation(diffResult);
             }
 
             // 简单的行级别文本对比算法
@@ -411,13 +464,13 @@
             // 在CodeMirror编辑器中显示对比结果
             function displayDiff(diff) {
                 // 清除之前的标记
-                originalEditor.operation(function() {
+                originalEditor.operation(function () {
                     for (let i = 0; i < originalEditor.lineCount(); i++) {
                         originalEditor.removeLineClass(i, "background");
                     }
                 });
-                
-                newEditor.operation(function() {
+
+                newEditor.operation(function () {
                     for (let i = 0; i < newEditor.lineCount(); i++) {
                         newEditor.removeLineClass(i, "background");
                     }
@@ -447,6 +500,93 @@
                             break;
                     }
                 });
+            }
+
+            // 显示差异数量和导航按钮
+            function showDiffNavigation(diff) {
+                // 计算差异数量（不包括equal类型）
+                const diffCount = diff.filter(item => item.type !== 'equal').length;
+
+                // 获取DOM元素
+                const diffNavigation = document.getElementById('diffNavigation');
+                const diffCountElement = document.getElementById('diffCount');
+
+                // 显示差异信息
+                if (diffCount > 0) {
+                    diffCountElement.textContent = `共找到 ${diffCount} 处差异`;
+                    diffNavigation.style.display = 'block';
+
+                    // 保存差异信息用于导航
+                    window.diffData = diff;
+                    window.currentDiffIndex = -1; // 初始化为-1，表示未开始导航
+
+                    // 更新导航按钮状态
+                    updateNavigationButtons();
+                } else {
+                    diffCountElement.textContent = '未找到差异';
+                    diffNavigation.style.display = 'block';
+                    window.diffData = [];
+                    window.currentDiffIndex = -1;
+                }
+            }
+
+            // 更新导航按钮状态
+            function updateNavigationButtons() {
+                const firstBtn = document.getElementById('firstDiffBtn');
+                const prevBtn = document.getElementById('prevDiffBtn');
+                const nextBtn = document.getElementById('nextDiffBtn');
+                const lastBtn = document.getElementById('lastDiffBtn');
+
+                const diffData = window.diffData || [];
+                const currentDiffIndex = window.currentDiffIndex;
+
+                // 如果没有差异，禁用所有按钮
+                if (diffData.length === 0) {
+                    firstBtn.disabled = true;
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
+                    lastBtn.disabled = true;
+                    return;
+                }
+
+                // 更新按钮状态
+                firstBtn.disabled = currentDiffIndex <= 0;
+                prevBtn.disabled = currentDiffIndex <= 0;
+                nextBtn.disabled = currentDiffIndex >= diffData.length - 1;
+                lastBtn.disabled = currentDiffIndex >= diffData.length - 1;
+            }
+
+            // 滚动到指定差异
+            function scrollToDiff(index) {
+                const diffData = window.diffData || [];
+                if (index < 0 || index >= diffData.length) return;
+
+                const diffItem = diffData[index];
+                window.currentDiffIndex = index;
+
+                // 根据差异类型滚动到相应位置
+                switch (diffItem.type) {
+                    case 'delete':
+                        // 滚动到原文本编辑器的指定行
+                        originalEditor.scrollIntoView({ line: diffItem.oldLine - 1, ch: 0 }, 100);
+                        originalEditor.setCursor(diffItem.oldLine - 1, 0);
+                        break;
+                    case 'insert':
+                        // 滚动到新文本编辑器的指定行
+                        newEditor.scrollIntoView({ line: diffItem.newLine - 1, ch: 0 }, 100);
+                        newEditor.setCursor(diffItem.newLine - 1, 0);
+                        break;
+                    case 'equal':
+                        // 滚动到两个编辑器的指定行
+                        originalEditor.scrollIntoView({ line: diffItem.oldLine - 1, ch: 0 }, 100);
+                        newEditor.scrollIntoView({ line: diffItem.newLine - 1, ch: 0 }, 100);
+                        originalEditor.setCursor(diffItem.oldLine - 1, 0);
+                        newEditor.setCursor(diffItem.newLine - 1, 0);
+                        break;
+                }
+
+                // 更新按钮状态
+                updateNavigationButtons();
             }
 
             // 转义HTML特殊字符
