@@ -43,7 +43,7 @@
   <div class="dialog" v-if="activeTool">
     <div class="title">
       {{ activeTool.name }}
-      <div class="close" @click="activeTool = null">
+      <div class="close" @click="activeTool = undefined">
         <img src="@/assets/close.svg" alt="" />
       </div>
     </div>
@@ -55,6 +55,7 @@
     <iframe v-else-if="activeTool.id === 6" src="./tools/getColor/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 7" src="./tools/QRCode/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 8" src="./tools/textDiff/index.html" frameborder="0" />
+    <iframe v-else-if="activeTool.id === 9" src="./tools/json2Code/index.html" frameborder="0" />
     <div v-else>{{ activeTool }}</div>
   </div>
 </template>
@@ -86,9 +87,11 @@ const userInfo = ref<{
 }>()
 const userHover = ref<boolean>(false)
 const activeTool = ref<Tool>()
+const avatarUrl = ref<string>()
 
 const tools = ref<Tool[]>([
   { id: 1, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 1, height: 1 },
+  { id: 9, name: 'JSON转Code', description: '将JSON数据转换为代码Java/Swift/Kotlin/ Typescript/C#/Python', width: 1, height: 1 },
   { id: 2, name: 'MD5', description: '计算字符串的MD5哈希值', width: 1, height: 1 },
   { id: 3, name: '图片压缩', description: '压缩图片文件大小', width: 1, height: 1 },
   { id: 4, name: 'Unix时间戳转换', description: '转换Unix时间戳为日期', width: 1, height: 1 },
@@ -96,7 +99,6 @@ const tools = ref<Tool[]>([
   { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
   { id: 7, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
   { id: 8, name: '文本对比', description: '对比两个文本的差异', width: 1, height: 1 },
-  // { id: 1, name: '代码格式化', description: '美化和格式化代码', width: 1, height: 1 },
   // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
   // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
   // { id: 5, name: '正则表达式', description: '正则表达式测试和验证', width: 1, height: 1 },
@@ -104,7 +106,6 @@ const tools = ref<Tool[]>([
   // { id: 9, name: '密码生成', description: '安全密码生成器', width: 1, height: 1 },
   // { id: 10, name: 'Markdown编辑器', description: '实时预览Markdown文档', width: 2, height: 1 },
   // { id: 13, name: '文件转换', description: '文件格式转换工具', width: 2, height: 1 },
-  // { id: 14, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 2, height: 1 },
   // { id: 15, name: 'XML格式化', description: '美化和格式化XML数据', width: 2, height: 1 },
   // { id: 16, name: 'SQL格式化', description: '美化和格式化SQL语句', width: 2, height: 1 },
   // { id: 17, name: 'CSV工具', description: 'CSV文件解析和转换', width: 2, height: 1 },
@@ -390,7 +391,7 @@ async function signOut() {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80%;
-  height: 80%;
+  height: 90%;
   background-color: rgba(255, 255, 255, 1);
   border-radius: 24px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);

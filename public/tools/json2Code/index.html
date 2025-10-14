@@ -116,7 +116,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>JSON转代码工具</h1>
+        <!-- <h1>JSON转代码工具</h1> -->
         
         <div class="input-section">
             <label for="jsonInput">请输入JSON数据：</label>
@@ -147,7 +147,10 @@
         <div id="messageContainer"></div>
         
         <div class="output-section">
-            <label for="codeOutput">生成的代码：</label>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label for="codeOutput">生成的代码：</label>
+                <button id="copyBtn" style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">复制代码</button>
+            </div>
             <pre><code id="codeOutput">请选择目标语言并点击生成按钮</code></pre>
         </div>
     </div>
@@ -158,6 +161,7 @@
             const targetLanguage = document.getElementById('targetLanguage');
             const className = document.getElementById('className');
             const generateBtn = document.getElementById('generateBtn');
+            const copyBtn = document.getElementById('copyBtn');
             const codeOutput = document.getElementById('codeOutput');
             const messageContainer = document.getElementById('messageContainer');
             
@@ -212,6 +216,34 @@
                 }
             });
             
+            // 复制代码按钮点击事件
+            copyBtn.addEventListener('click', function() {
+                const codeText = codeOutput.textContent;
+                
+                if (!codeText || codeText === '请选择目标语言并点击生成按钮') {
+                    showMessage('请先生成代码再复制', 'error');
+                    return;
+                }
+                
+                // 使用Clipboard API复制文本
+                navigator.clipboard.writeText(codeText).then(function() {
+                    showMessage('代码复制成功！', 'success');
+                }).catch(function(err) {
+                    // 如果Clipboard API不可用，使用备选方案
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = codeText;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        showMessage('代码复制成功！', 'success');
+                    } catch (e) {
+                        showMessage('复制失败，请手动复制', 'error');
+                    }
+                });
+            });
+            
             // 显示消息函数
             function showMessage(message, type) {
                 const messageDiv = document.createElement('div');
@@ -243,208 +275,341 @@
                 return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
             }
             
-            // Java代码生成
+            // Java代码生成（改进版，支持嵌套对象）
             function generateJavaCode(obj, className) {
-                let code = `public class ${className} {\n`;
-                const fields = [];
+                // 存储所有需要生成的类定义
+                const classes = [];
                 
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        const value = obj[key];
-                        const type = getDataType(value);
-                        const fieldName = toCamelCase(key);
-                        
-                        let javaType;
-                        switch(type) {
-                            case 'string':
-                                javaType = 'String';
-                                break;
-                            case 'number':
-                                javaType = Number.isInteger(value) ? 'Integer' : 'Double';
-                                break;
-                            case 'boolean':
-                                javaType = 'Boolean';
-                                break;
-                            case 'object':
-                                if (value === null) {
-                                    javaType = 'Object';
-                                } else {
-                                    javaType = toPascalCase(key);
-                                }
-                                break;
-                            case 'array':
-                                if (value.length > 0) {
-                                    const elementType = getDataType(value[0]);
-                                    switch(elementType) {
-                                        case 'string':
-                                            javaType = 'List<String>';
-                                            break;
-                                        case 'number':
-                                            javaType = Number.isInteger(value[0]) ? 'List<Integer>' : 'List<Double>';
-                                            break;
-                                        case 'boolean':
-                                            javaType = 'List<Boolean>';
-                                            break;
-                                        default:
-                                            javaType = 'List<Object>';
-                                    }
-                                } else {
-                                    javaType = 'List<Object>';
-                                }
-                                break;
-                            default:
-                                javaType = 'Object';
-                        }
-                        
-                        fields.push({ name: fieldName, type: javaType });
-                        code += `    private ${javaType} ${fieldName};\n`;
+                // 递归处理对象，生成所有需要的类
+                function processObject(obj, name) {
+                    // 检查是否已经处理过这个类
+                    if (classes.some(c => c.name === name)) {
+                        return name;
                     }
+                    
+                    let code = `public class ${name} {\n`;
+                    const fields = [];
+                    
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            const value = obj[key];
+                            const type = getDataType(value);
+                            const fieldName = toCamelCase(key);
+                            
+                            let javaType;
+                            switch(type) {
+                                case 'string':
+                                    javaType = 'String';
+                                    break;
+                                case 'number':
+                                    javaType = Number.isInteger(value) ? 'Integer' : 'Double';
+                                    break;
+                                case 'boolean':
+                                    javaType = 'Boolean';
+                                    break;
+                                case 'object':
+                                    if (value === null) {
+                                        javaType = 'Object';
+                                    } else {
+                                        // 为嵌套对象创建新的类名
+                                        const nestedClassName = toPascalCase(key);
+                                        javaType = nestedClassName;
+                                        // 递归处理嵌套对象
+                                        processObject(value, nestedClassName);
+                                    }
+                                    break;
+                                case 'array':
+                                    if (value.length > 0) {
+                                        const elementType = getDataType(value[0]);
+                                        switch(elementType) {
+                                            case 'string':
+                                                javaType = 'List<String>';
+                                                break;
+                                            case 'number':
+                                                javaType = Number.isInteger(value[0]) ? 'List<Integer>' : 'List<Double>';
+                                                break;
+                                            case 'boolean':
+                                                javaType = 'List<Boolean>';
+                                                break;
+                                            case 'object':
+                                                if (value[0] === null) {
+                                                    javaType = 'List<Object>';
+                                                } else {
+                                                    // 为数组中的对象元素创建类
+                                                    const nestedClassName = toPascalCase(key);
+                                                    javaType = `List<${nestedClassName}>`;
+                                                    // 递归处理数组中的对象
+                                                    processObject(value[0], nestedClassName);
+                                                }
+                                                break;
+                                            default:
+                                                javaType = 'List<Object>';
+                                        }
+                                    } else {
+                                        javaType = 'List<Object>';
+                                    }
+                                    break;
+                                default:
+                                    javaType = 'Any?';
+                            }
+                            
+                            fields.push({ name: fieldName, type: javaType });
+                            code += `    private ${javaType} ${fieldName};\n`;
+                        }
+                    }
+                    
+                    // 生成构造函数
+                    code += `\n    public ${name}() {}\n`;
+                    
+                    // 生成getter和setter方法
+                    fields.forEach(field => {
+                        const methodName = toPascalCase(field.name);
+                        
+                        // Getter
+                        code += `\n    public ${field.type} get${methodName}() {\n`;
+                        code += `        return this.${field.name};\n`;
+                        code += `    }\n`;
+                        
+                        // Setter
+                        code += `\n    public void set${methodName}(${field.type} ${field.name}) {\n`;
+                        code += `        this.${field.name} = ${field.name};\n`;
+                        code += `    }\n`;
+                    });
+                    
+                    code += `}\n`;
+                    
+                    // 将类添加到列表中
+                    classes.push({
+                        name: name,
+                        code: code
+                    });
+                    
+                    return name;
                 }
                 
-                // 生成构造函数
-                code += `\n    public ${className}() {}\n`;
+                // 处理主对象
+                processObject(obj, className);
                 
-                // 生成getter和setter方法
-                fields.forEach(field => {
-                    const methodName = toPascalCase(field.name);
-                    
-                    // Getter
-                    code += `\n    public ${field.type} get${methodName}() {\n`;
-                    code += `        return this.${field.name};\n`;
-                    code += `    }\n`;
-                    
-                    // Setter
-                    code += `\n    public void set${methodName}(${field.type} ${field.name}) {\n`;
-                    code += `        this.${field.name} = ${field.name};\n`;
-                    code += `    }\n`;
+                // 组合所有类的代码
+                let result = '';
+                classes.forEach((c, index) => {
+                    result += c.code + (index < classes.length - 1 ? '\n' : '');
                 });
                 
-                code += `}\n`;
-                return code;
+                return result;
             }
             
-            // Swift代码生成
+            // Swift代码生成（改进版，支持嵌套对象）
             function generateSwiftCode(obj, className) {
-                let code = `struct ${className}: Codable {\n`;
+                // 存储所有需要生成的结构体定义
+                const structs = [];
                 
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        const value = obj[key];
-                        const type = getDataType(value);
-                        const fieldName = key;
-                        
-                        let swiftType;
-                        switch(type) {
-                            case 'string':
-                                swiftType = 'String';
-                                break;
-                            case 'number':
-                                swiftType = Number.isInteger(value) ? 'Int' : 'Double';
-                                break;
-                            case 'boolean':
-                                swiftType = 'Bool';
-                                break;
-                            case 'object':
-                                if (value === null) {
-                                    swiftType = 'Any?';
-                                } else {
-                                    swiftType = toPascalCase(key);
-                                }
-                                break;
-                            case 'array':
-                                if (value.length > 0) {
-                                    const elementType = getDataType(value[0]);
-                                    switch(elementType) {
-                                        case 'string':
-                                            swiftType = '[String]';
-                                            break;
-                                        case 'number':
-                                            swiftType = Number.isInteger(value[0]) ? '[Int]' : '[Double]';
-                                            break;
-                                        case 'boolean':
-                                            swiftType = '[Bool]';
-                                            break;
-                                        default:
-                                            swiftType = '[Any]';
-                                    }
-                                } else {
-                                    swiftType = '[Any]';
-                                }
-                                break;
-                            default:
-                                swiftType = 'Any?';
-                        }
-                        
-                        code += `    let ${fieldName}: ${swiftType}\n`;
+                // 递归处理对象，生成所有需要的结构体
+                function processObject(obj, name) {
+                    // 检查是否已经处理过这个结构体
+                    if (structs.some(s => s.name === name)) {
+                        return name;
                     }
+                    
+                    let code = `struct ${name}: Codable {\n`;
+                    
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            const value = obj[key];
+                            const type = getDataType(value);
+                            const fieldName = key;
+                            
+                            let swiftType;
+                            switch(type) {
+                                case 'string':
+                                    swiftType = 'String';
+                                    break;
+                                case 'number':
+                                    swiftType = Number.isInteger(value) ? 'Int' : 'Double';
+                                    break;
+                                case 'boolean':
+                                    swiftType = 'Bool';
+                                    break;
+                                case 'object':
+                                    if (value === null) {
+                                        swiftType = 'Any?';
+                                    } else {
+                                        // 为嵌套对象创建新的结构体名
+                                        const nestedStructName = toPascalCase(key);
+                                        swiftType = nestedStructName;
+                                        // 递归处理嵌套对象
+                                        processObject(value, nestedStructName);
+                                    }
+                                    break;
+                                case 'array':
+                                    if (value.length > 0) {
+                                        const elementType = getDataType(value[0]);
+                                        switch(elementType) {
+                                            case 'string':
+                                                swiftType = '[String]';
+                                                break;
+                                            case 'number':
+                                                swiftType = Number.isInteger(value[0]) ? '[Int]' : '[Double]';
+                                                break;
+                                            case 'boolean':
+                                                swiftType = '[Bool]';
+                                                break;
+                                            case 'object':
+                                                if (value[0] === null) {
+                                                    swiftType = '[Any?]?';
+                                                } else {
+                                                    // 为数组中的对象元素创建结构体
+                                                    const nestedStructName = toPascalCase(key);
+                                                    swiftType = `[${nestedStructName}]`;
+                                                    // 递归处理数组中的对象
+                                                    processObject(value[0], nestedStructName);
+                                                }
+                                                break;
+                                            default:
+                                                swiftType = '[Any]';
+                                        }
+                                    } else {
+                                        swiftType = '[Any]';
+                                    }
+                                    break;
+                                default:
+                                    swiftType = 'Any?';
+                            }
+                            
+                            code += `    let ${fieldName}: ${swiftType}\n`;
+                        }
+                    }
+                    
+                    code += `}\n`;
+                    
+                    // 将结构体添加到列表中
+                    structs.push({
+                        name: name,
+                        code: code
+                    });
+                    
+                    return name;
                 }
                 
-                code += `}\n`;
-                return code;
+                // 处理主对象
+                processObject(obj, className);
+                
+                // 组合所有结构体的代码
+                let result = '';
+                structs.forEach((s, index) => {
+                    result += s.code + (index < structs.length - 1 ? '\n' : '');
+                });
+                
+                return result;
             }
             
-            // Kotlin代码生成
+            // Kotlin代码生成（改进版，支持嵌套对象）
             function generateKotlinCode(obj, className) {
-                let code = `data class ${className}(\n`;
-                const fields = [];
+                // 存储所有需要生成的数据类定义
+                const dataClasses = [];
                 
-                let index = 0;
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        const value = obj[key];
-                        const type = getDataType(value);
-                        const fieldName = toCamelCase(key);
-                        
-                        let kotlinType;
-                        switch(type) {
-                            case 'string':
-                                kotlinType = 'String';
-                                break;
-                            case 'number':
-                                kotlinType = Number.isInteger(value) ? 'Int' : 'Double';
-                                break;
-                            case 'boolean':
-                                kotlinType = 'Boolean';
-                                break;
-                            case 'object':
-                                if (value === null) {
-                                    kotlinType = 'Any?';
-                                } else {
-                                    kotlinType = toPascalCase(key);
-                                }
-                                break;
-                            case 'array':
-                                if (value.length > 0) {
-                                    const elementType = getDataType(value[0]);
-                                    switch(elementType) {
-                                        case 'string':
-                                            kotlinType = 'List<String>';
-                                            break;
-                                        case 'number':
-                                            kotlinType = Number.isInteger(value[0]) ? 'List<Int>' : 'List<Double>';
-                                            break;
-                                        case 'boolean':
-                                            kotlinType = 'List<Boolean>';
-                                            break;
-                                        default:
-                                            kotlinType = 'List<Any>';
-                                    }
-                                } else {
-                                    kotlinType = 'List<Any>';
-                                }
-                                break;
-                            default:
-                                kotlinType = 'Any?';
-                        }
-                        
-                        fields.push({ name: fieldName, type: kotlinType });
-                        code += `    val ${fieldName}: ${kotlinType}${index < Object.keys(obj).length - 1 ? ',' : ''}\n`;
-                        index++;
+                // 递归处理对象，生成所有需要的数据类
+                function processObject(obj, name) {
+                    // 检查是否已经处理过这个数据类
+                    if (dataClasses.some(dc => dc.name === name)) {
+                        return name;
                     }
+                    
+                    let code = `data class ${name}(\n`;
+                    const fields = [];
+                    
+                    let index = 0;
+                    const keys = Object.keys(obj);
+                    for (const key of keys) {
+                        if (obj.hasOwnProperty(key)) {
+                            const value = obj[key];
+                            const type = getDataType(value);
+                            const fieldName = toCamelCase(key);
+                            
+                            let kotlinType;
+                            switch(type) {
+                                case 'string':
+                                    kotlinType = 'String';
+                                    break;
+                                case 'number':
+                                    kotlinType = Number.isInteger(value) ? 'Int' : 'Double';
+                                    break;
+                                case 'boolean':
+                                    kotlinType = 'Boolean';
+                                    break;
+                                case 'object':
+                                    if (value === null) {
+                                        kotlinType = 'Any?';
+                                    } else {
+                                        // 为嵌套对象创建新的数据类名
+                                        const nestedDataClassName = toPascalCase(key);
+                                        kotlinType = nestedDataClassName;
+                                        // 递归处理嵌套对象
+                                        processObject(value, nestedDataClassName);
+                                    }
+                                    break;
+                                case 'array':
+                                    if (value.length > 0) {
+                                        const elementType = getDataType(value[0]);
+                                        switch(elementType) {
+                                            case 'string':
+                                                kotlinType = 'List<String>';
+                                                break;
+                                            case 'number':
+                                                kotlinType = Number.isInteger(value[0]) ? 'List<Int>' : 'List<Double>';
+                                                break;
+                                            case 'boolean':
+                                                kotlinType = 'List<Boolean>';
+                                                break;
+                                            case 'object':
+                                                if (value[0] === null) {
+                                                    kotlinType = 'List<Any?>';
+                                                } else {
+                                                    // 为数组中的对象元素创建数据类
+                                                    const nestedDataClassName = toPascalCase(key);
+                                                    kotlinType = `List<${nestedDataClassName}>`;
+                                                    // 递归处理数组中的对象
+                                                    processObject(value[0], nestedDataClassName);
+                                                }
+                                                break;
+                                            default:
+                                                kotlinType = 'List<Any>';
+                                        }
+                                    } else {
+                                        kotlinType = 'List<Any>';
+                                    }
+                                    break;
+                                default:
+                                    kotlinType = 'Any?';
+                            }
+                            
+                            fields.push({ name: fieldName, type: kotlinType });
+                            code += `    val ${fieldName}: ${kotlinType}${index < keys.length - 1 ? ',' : ''}\n`;
+                            index++;
+                        }
+                    }
+                    
+                    code += `)\n`;
+                    
+                    // 将数据类添加到列表中
+                    dataClasses.push({
+                        name: name,
+                        code: code
+                    });
+                    
+                    return name;
                 }
                 
-                code += `)\n`;
-                return code;
+                // 处理主对象
+                processObject(obj, className);
+                
+                // 组合所有数据类的代码
+                let result = '';
+                dataClasses.forEach((dc, index) => {
+                    result += dc.code + (index < dataClasses.length - 1 ? '\n' : '');
+                });
+                
+                return result;
             }
             
             // TypeScript代码生成（改进版，支持嵌套对象）
@@ -561,113 +726,213 @@
                 return result;
             }
             
-            // C#代码生成
+            // C#代码生成（改进版，支持嵌套对象）
             function generateCSharpCode(obj, className) {
-                let code = `public class ${className}\n{\n`;
+                // 存储所有需要生成的类定义
+                const classes = [];
                 
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        const value = obj[key];
-                        const type = getDataType(value);
-                        const propertyName = toPascalCase(key);
-                        
-                        let csType;
-                        switch(type) {
-                            case 'string':
-                                csType = 'string';
-                                break;
-                            case 'number':
-                                csType = Number.isInteger(value) ? 'int' : 'double';
-                                break;
-                            case 'boolean':
-                                csType = 'bool';
-                                break;
-                            case 'object':
-                                if (value === null) {
-                                    csType = 'object';
-                                } else {
-                                    csType = toPascalCase(key);
-                                }
-                                break;
-                            case 'array':
-                                if (value.length > 0) {
-                                    const elementType = getDataType(value[0]);
-                                    switch(elementType) {
-                                        case 'string':
-                                            csType = 'List<string>';
-                                            break;
-                                        case 'number':
-                                            csType = Number.isInteger(value[0]) ? 'List<int>' : 'List<double>';
-                                            break;
-                                        case 'boolean':
-                                            csType = 'List<bool>';
-                                            break;
-                                        default:
-                                            csType = 'List<object>';
-                                    }
-                                } else {
-                                    csType = 'List<object>';
-                                }
-                                break;
-                            default:
-                                csType = 'object';
-                        }
-                        
-                        code += `    public ${csType} ${propertyName} { get; set; }\n`;
+                // 递归处理对象，生成所有需要的类
+                function processObject(obj, name) {
+                    // 检查是否已经处理过这个类
+                    if (classes.some(c => c.name === name)) {
+                        return name;
                     }
+                    
+                    let code = `public class ${name}\n{\n`;
+                    
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            const value = obj[key];
+                            const type = getDataType(value);
+                            const propertyName = toPascalCase(key);
+                            
+                            let csType;
+                            switch(type) {
+                                case 'string':
+                                    csType = 'string';
+                                    break;
+                                case 'number':
+                                    csType = Number.isInteger(value) ? 'int' : 'double';
+                                    break;
+                                case 'boolean':
+                                    csType = 'bool';
+                                    break;
+                                case 'object':
+                                    if (value === null) {
+                                        csType = 'object';
+                                    } else {
+                                        // 为嵌套对象创建新的类名
+                                        const nestedClassName = toPascalCase(key);
+                                        csType = nestedClassName;
+                                        // 递归处理嵌套对象
+                                        processObject(value, nestedClassName);
+                                    }
+                                    break;
+                                case 'array':
+                                    if (value.length > 0) {
+                                        const elementType = getDataType(value[0]);
+                                        switch(elementType) {
+                                            case 'string':
+                                                csType = 'List<string>';
+                                                break;
+                                            case 'number':
+                                                csType = Number.isInteger(value[0]) ? 'List<int>' : 'List<double>';
+                                                break;
+                                            case 'boolean':
+                                                csType = 'List<bool>';
+                                                break;
+                                            case 'object':
+                                                if (value[0] === null) {
+                                                    csType = 'List<object>';
+                                                } else {
+                                                    // 为数组中的对象元素创建类
+                                                    const nestedClassName = toPascalCase(key);
+                                                    csType = `List<${nestedClassName}>`;
+                                                    // 递归处理数组中的对象
+                                                    processObject(value[0], nestedClassName);
+                                                }
+                                                break;
+                                            default:
+                                                csType = 'List<object>';
+                                        }
+                                    } else {
+                                        csType = 'List<object>';
+                                    }
+                                    break;
+                                default:
+                                    csType = 'object';
+                            }
+                            
+                            code += `    public ${csType} ${propertyName} { get; set; }\n`;
+                        }
+                    }
+                    
+                    code += `}\n`;
+                    
+                    // 将类添加到列表中
+                    classes.push({
+                        name: name,
+                        code: code
+                    });
+                    
+                    return name;
                 }
                 
-                code += `}\n`;
-                return code;
+                // 处理主对象
+                processObject(obj, className);
+                
+                // 组合所有类的代码
+                let result = '';
+                classes.forEach((c, index) => {
+                    result += c.code + (index < classes.length - 1 ? '\n' : '');
+                });
+                
+                return result;
             }
             
-            // Python代码生成
+            // Python代码生成（改进版，支持嵌套对象）
             function generatePythonCode(obj, className) {
-                let code = `class ${className}:\n`;
-                code += `    def __init__(self):\n`;
+                // 存储所有需要生成的类定义
+                const classes = [];
                 
-                const fieldDefaults = [];
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        const value = obj[key];
-                        const fieldName = toCamelCase(key);
-                        
-                        let defaultValue;
-                        const type = getDataType(value);
-                        switch(type) {
-                            case 'string':
-                                defaultValue = `""`;
-                                break;
-                            case 'number':
-                                defaultValue = '0';
-                                break;
-                            case 'boolean':
-                                defaultValue = 'False';
-                                break;
-                            case 'object':
-                                if (value === null) {
-                                    defaultValue = 'None';
-                                } else {
-                                    defaultValue = 'None  # TODO: Define proper type';
-                                }
-                                break;
-                            case 'array':
-                                defaultValue = '[]';
-                                break;
-                            default:
-                                defaultValue = 'None';
-                        }
-                        
-                        fieldDefaults.push({ name: fieldName, default: defaultValue });
-                        code += `        self.${fieldName} = ${defaultValue}\n`;
+                // 递归处理对象，生成所有需要的类
+                function processObject(obj, name) {
+                    // 检查是否已经处理过这个类
+                    if (classes.some(c => c.name === name)) {
+                        return name;
                     }
+                    
+                    let code = `class ${name}:\n`;
+                    code += `    def __init__(self):\n`;
+                    
+                    const fieldDefaults = [];
+                    for (const key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            const value = obj[key];
+                            const fieldName = toCamelCase(key);
+                            
+                            let defaultValue;
+                            const type = getDataType(value);
+                            switch(type) {
+                                case 'string':
+                                    defaultValue = `""`;
+                                    break;
+                                case 'number':
+                                    defaultValue = '0';
+                                    break;
+                                case 'boolean':
+                                    defaultValue = 'False';
+                                    break;
+                                case 'object':
+                                    if (value === null) {
+                                        defaultValue = 'None';
+                                    } else {
+                                        // 为嵌套对象创建新的类名
+                                        const nestedClassName = toPascalCase(key);
+                                        defaultValue = `${nestedClassName}()`;
+                                        // 递归处理嵌套对象
+                                        processObject(value, nestedClassName);
+                                    }
+                                    break;
+                                case 'array':
+                                    if (value.length > 0) {
+                                        const elementType = getDataType(value[0]);
+                                        switch(elementType) {
+                                            case 'string':
+                                            case 'number':
+                                            case 'boolean':
+                                                defaultValue = '[]';
+                                                break;
+                                            case 'object':
+                                                if (value[0] === null) {
+                                                    defaultValue = '[]';
+                                                } else {
+                                                    // 为数组中的对象元素创建类
+                                                    const nestedClassName = toPascalCase(key);
+                                                    defaultValue = `[]  # List of ${nestedClassName}`;
+                                                    // 递归处理数组中的对象
+                                                    processObject(value[0], nestedClassName);
+                                                }
+                                                break;
+                                            default:
+                                                defaultValue = '[]';
+                                        }
+                                    } else {
+                                        defaultValue = '[]';
+                                    }
+                                    break;
+                                default:
+                                    defaultValue = 'None';
+                            }
+                            
+                            fieldDefaults.push({ name: fieldName, default: defaultValue });
+                            code += `        self.${fieldName} = ${defaultValue}\n`;
+                        }
+                    }
+                    
+                    if (fieldDefaults.length === 0) {
+                        code += `        pass\n`;
+                    }
+                    
+                    // 将类添加到列表中
+                    classes.push({
+                        name: name,
+                        code: code
+                    });
+                    
+                    return name;
                 }
                 
-                if (fieldDefaults.length === 0) {
-                    code += `        pass\n`;
-                }
+                // 处理主对象
+                processObject(obj, className);
                 
-                return code;
+                // 组合所有类的代码
+                let result = '';
+                classes.forEach((c, index) => {
+                    result += c.code + (index < classes.length - 1 ? '\n' : '');
+                });
+                
+                return result;
             }
         });
     </script>
