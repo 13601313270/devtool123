@@ -65,7 +65,13 @@
     <div v-else>{{ activeTool }}</div>
   </div>
   <div class="dialog" v-if="runCodePreview">
-    <iframe ref="runCodeDom" class="run-code-preview" />
+    <div class="title">
+      {{ runCodePreview.name }}
+      <div class="close" @click="runCodePreview = undefined">
+        <img src="@/assets/close.svg" alt="" />
+      </div>
+    </div>
+    <iframe ref="runCodeDom" class="run-code-preview" frameborder="0" />
   </div>
 
   <!-- 自定义工具弹窗 -->
@@ -89,7 +95,7 @@
         <div class="panel-header">
           <h3>预览</h3>
           <div style="flex-grow: 1;"></div>
-          <button @click="saveCode">保存</button>
+          <button @click="saveCode" :loading="saveLoading">保存</button>
         </div>
         <div class="preview-content" v-html="customHtmlPreview"></div>
       </div>
@@ -209,7 +215,9 @@ function runCode() {
   customHtmlPreview.value = customHtmlCode.value
 }
 
+const saveLoading = ref<boolean>(false)
 async function saveCode() {
+  saveLoading.value = true
   const { data, error } = await supabase.functions.invoke('saveCode', {
     body: {
       name: '自定义工具',
@@ -218,10 +226,12 @@ async function saveCode() {
     }
   })
   if (error) {
+    saveLoading.value = false
     console.error('保存代码失败:', error.message);
     return;
   }
   if (data.status === 201) {
+    saveLoading.value = false
     Toast.success('代码保存成功')
     console.log('代码保存成功:', data);
     showCustomToolDialog.value = false;
@@ -229,8 +239,9 @@ async function saveCode() {
   }
 }
 
-const runCodePreview = ref<string>('')
-const runCodeDom = ref<HTMLDivElement | null>(null)
+const runCodePreview = ref<myCodeItem>()
+
+const runCodeDom = ref<HTMLIFrameElement | null>(null)
 async function runMyCodeItem(item: myCodeItem) {
   const { data } = await supabase.functions.invoke('getCodeById', {
     body: {
@@ -241,13 +252,14 @@ async function runMyCodeItem(item: myCodeItem) {
   if (!data || !data.code) {
     return;
   }
-  runCodePreview.value = data.code
+  runCodePreview.value = item
 
   nextTick(() => {
     // 直接把代码写入这个iframe里
-    if (runCodeDom.value) {
-      runCodeDom.value.contentDocument.clear()
-      runCodeDom.value.contentDocument.write(data.code)
+    if (runCodeDom.value && runCodeDom.value.contentDocument) {
+      runCodeDom.value.contentDocument.open();
+      runCodeDom.value.contentDocument.write(data.code);
+      runCodeDom.value.contentDocument.close();
     }
   })
 }
