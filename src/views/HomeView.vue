@@ -30,7 +30,7 @@
     </div>
 
     <div class="grid-container">
-      <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定义自己的工具</div>
+      <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定制自己的工具</div>
       <div v-for="value in myCodeList" :key="'myCodeList' + value.id" class="grid-item myCode"
         @click="runCodePreviewIframe(value)">
         <div class="tool-content">
