@@ -31,10 +31,12 @@
 
     <div class="grid-container">
       <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定义自己的工具</div>
-      <div v-for="value in myCodeList" :key="value.id" class="grid-item myCode" @click="runMyCodeItem(value)">
+      <div v-for="value in myCodeList" :key="'myCodeList' + value.id" class="grid-item myCode"
+        @click="runMyCodeItem(value)">
         <div class="tool-content">
           <h3>{{ value.name }}</h3>
           <p>{{ value.description }}</p>
+          <div class="createUser">由用户{{ value.uid }}创建</div>
         </div>
       </div>
       <div class="grid-item" v-for="item in tools" :key="item.id"
@@ -101,6 +103,30 @@
       </div>
     </div>
   </div>
+
+  <!-- 保存弹窗 -->
+  <div class="dialog save-dialog" v-if="showSaveDialog">
+    <div class="title">
+      保存工具
+      <div class="close" @click="showSaveDialog = false">
+        <img src="@/assets/close.svg" alt="" />
+      </div>
+    </div>
+    <div class="save-dialog-content">
+      <div class="form-group">
+        <label for="toolName">工具名称</label>
+        <input id="toolName" v-model="saveName" type="text" placeholder="请输入工具名称" />
+      </div>
+      <div class="form-group">
+        <label for="toolDescription">工具描述</label>
+        <textarea id="toolDescription" v-model="saveDescription" placeholder="请输入工具描述"></textarea>
+      </div>
+      <div class="form-actions">
+        <Button @click="showSaveDialog = false">取消</Button>
+        <Button @click="doSaveCode" :loading="saveLoading">保存</Button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -130,6 +156,7 @@ interface myCodeItem {
   id: number;
   name: string;
   description: string;
+  uid: number;
 }
 
 const isInitUser = ref<boolean>(false)
@@ -145,6 +172,9 @@ const avatarUrl = ref<string>()
 
 // 自定义工具弹窗相关
 const showCustomToolDialog = ref<boolean>(false)
+const showSaveDialog = ref<boolean>(false)
+const saveName = ref<string>('')
+const saveDescription = ref<string>('')
 const customHtmlCode = ref<string>(`<!DOCTYPE html>
 <html>
 <head>
@@ -239,11 +269,16 @@ function runCode() {
 
 const saveLoading = ref<boolean>(false)
 async function saveCode() {
+  // 显示输入弹窗
+  showSaveDialog.value = true
+}
+
+async function doSaveCode() {
   saveLoading.value = true
   const { data, error } = await supabase.functions.invoke('saveCode', {
     body: {
-      name: '自定义工具',
-      description: '自定义的HTML工具',
+      name: saveName.value,
+      description: saveDescription.value,
       code: customHtmlCode.value,
     }
   })
@@ -257,6 +292,9 @@ async function saveCode() {
     Toast.success('代码保存成功')
     console.log('代码保存成功:', data);
     showCustomToolDialog.value = false;
+    showSaveDialog.value = false
+    saveName.value = ''
+    saveDescription.value = ''
     await getMyCodeList();
   }
 }
@@ -265,6 +303,7 @@ const runCodePreview = ref<myCodeItem>()
 
 const runCodeDom = ref<HTMLIFrameElement | null>(null)
 async function runMyCodeItem(item: myCodeItem) {
+  runCodePreview.value = item
   const { data } = await supabase.functions.invoke('getCodeById', {
     body: {
       id: item.id,
@@ -274,7 +313,6 @@ async function runMyCodeItem(item: myCodeItem) {
   if (!data || !data.code) {
     return;
   }
-  runCodePreview.value = item
 
   nextTick(() => {
     // 直接把代码写入这个iframe里
@@ -607,7 +645,7 @@ async function signOut() {
   }
 
   &.myCode {
-    border: solid 1px green;
+    border: solid 2px #4285f4;
   }
 
   .grid-item:hover {
@@ -624,18 +662,32 @@ async function signOut() {
     align-items: center;
     text-align: center;
     cursor: pointer;
-  }
+    position: relative;
 
-  .tool-content h3 {
-    margin: 0 0 10px 0;
-    color: #333;
-    font-size: 1.2em;
-  }
+    h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 22px;
+    }
 
-  .tool-content p {
-    margin: 0;
-    color: #666;
-    font-size: 0.9em;
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .createUser {
+      position: absolute;
+      color: rgb(140, 140, 140);
+      font-size: 14px;
+      font-family: PingFangSC-regular;
+      background: #4285f4;
+      color: white;
+      bottom: 0;
+      right: 0;
+      padding: 3px 8px;
+      border-radius: 8px 0 0 0;
+    }
   }
 }
 
@@ -778,6 +830,54 @@ async function signOut() {
           font-size: 14px;
         }
       }
+    }
+  }
+}
+
+// 保存弹窗样式
+.save-dialog {
+  .save-dialog-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .form-group {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: #4285f4;
+          outline: none;
+        }
+      }
+
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: auto;
     }
   }
 }
