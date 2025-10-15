@@ -32,7 +32,7 @@
     <div class="grid-container">
       <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定义自己的工具</div>
       <div v-for="value in myCodeList" :key="'myCodeList' + value.id" class="grid-item myCode"
-        @click="runMyCodeItem(value)">
+        @click="runCodePreviewIframe(value)">
         <div class="tool-content">
           <h3>{{ value.name }}</h3>
           <p>{{ value.description }}</p>
@@ -69,6 +69,7 @@
   <div class="dialog" v-if="runCodePreview">
     <div class="title">
       {{ runCodePreview.name }}
+      <div class="share" @click="copyShareLink">分享</div>
       <div class="close" @click="runCodePreview = undefined">
         <img src="@/assets/close.svg" alt="" />
       </div>
@@ -302,23 +303,28 @@ async function doSaveCode() {
 const runCodePreview = ref<myCodeItem>()
 
 const runCodeDom = ref<HTMLIFrameElement | null>(null)
-async function runMyCodeItem(item: myCodeItem) {
+async function runCodePreviewIframe(item: myCodeItem) {
   runCodePreview.value = item
+  location.hash = 'codeId=' + item.id.toString()
+  runMyCodeItem(item.id)
+}
+async function runMyCodeItem(id: number) {
   const { data } = await supabase.functions.invoke('getCodeById', {
     body: {
-      id: item.id,
+      id,
     }
   })
+  runCodePreview.value = data
   console.log(data)
   if (!data || !data.code) {
     return;
   }
-
+  const code = data.code;
   nextTick(() => {
     // 直接把代码写入这个iframe里
     if (runCodeDom.value && runCodeDom.value.contentDocument) {
       runCodeDom.value.contentDocument.open();
-      runCodeDom.value.contentDocument.write(data.code);
+      runCodeDom.value.contentDocument.write(code);
       runCodeDom.value.contentDocument.close();
     }
   })
@@ -373,6 +379,13 @@ onMounted(async () => {
   await getMyCodeList();
   // 初始化预览
   runCode();
+  if (location.hash.includes('codeId=')) {
+    const id = Number(location.hash.replace('#codeId=', ''))
+    // location.hash = ''
+    if (id) {
+      runMyCodeItem(id)
+    }
+  }
 })
 
 // 在组件卸载前销毁编辑器
@@ -451,6 +464,14 @@ async function signOut() {
     window.location.reload();
     isInitUser.value = false;
   }
+}
+function copyShareLink() {
+  const shareLink = window.location.href;
+  navigator.clipboard.writeText(shareLink).then(() => {
+    Toast.success('分享链接已复制')
+  }).catch(() => {
+    Toast.error('复制分享链接失败')
+  })
 }
 </script>
 
@@ -701,7 +722,7 @@ async function signOut() {
   background-color: rgba(255, 255, 255, 1);
   border-radius: 24px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  z-index: 10000;
+  z-index: 9998;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -714,6 +735,28 @@ async function signOut() {
     font-size: 24px;
     font-family: PingFangSC-regular;
     text-align: center;
+
+    .share {
+      position: absolute;
+      top: 8px;
+      right: 54px;
+      width: 48px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10001;
+      font-size: 15px;
+      color: rgba(3, 61, 93, 1);
+      border: solid 1px rgba(3, 61, 93, 1);
+      border-radius: 8px;
+
+      >img {
+        width: 25px;
+        height: 25px;
+      }
+    }
 
     .close {
       position: absolute;
