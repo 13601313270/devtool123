@@ -609,9 +609,12 @@ function copyShareLink() {
 
   .loginList {
     display: flex;
+    align-items: center;
 
     .title {
       margin-right: 8px;
+      font-size: 20px;
+      color: #8d8d8d;
     }
 
     .loginButton {
