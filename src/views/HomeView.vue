@@ -18,15 +18,14 @@
           </div>
         </div>
       </div>
-      <div v-else>
-        <!-- <div class="loginButton" @click="signInWithGoogle('google')">
+      <div v-else class="loginList">
+        <div class="title">Log in</div>
+        <div class="loginButton" @click="signInWithGoogle('google')">
           <img src="../assets/google.svg" alt="">
-          <span>Log in</span>
         </div>
         <div class="loginButton" @click="signInWithGoogle('github')">
-          <img src="../assets/google.svg" alt="">
-          <span>github</span>
-        </div> -->
+          <img src="../assets/github.svg" alt="">
+        </div>
       </div>
     </div>
 
@@ -151,7 +150,7 @@ async function initUnitUserInfo() {
   console.log('ooooo', user)
   userInfo.value = user as any;
 }
-async function signInWithGoogle(provider: 'google') {
+async function signInWithGoogle(provider: 'google' | 'github') {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -314,26 +313,29 @@ async function signOut() {
     }
   }
 
-  .loginButton {
-    width: 96px;
-    height: 32px;
-    line-height: 20px;
-    border-radius: 12px;
-    background-color: rgba(52, 135, 255, 1);
-    color: rgba(255, 255, 255, 1);
-    font-size: 14px;
-    text-align: center;
-    font-family: PingFangSC-regular;
+  .loginList {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
 
-    >img {
-      width: 20px;
-      height: 20px;
+    .title {
       margin-right: 8px;
+    }
+
+    .loginButton {
+      margin-right: 8px;
+      color: rgba(255, 255, 255, 1);
+      font-size: 14px;
+      text-align: center;
+      font-family: PingFangSC-regular;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      >img {
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 }
