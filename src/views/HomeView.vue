@@ -31,6 +31,12 @@
 
     <div class="grid-container">
       <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定义自己的工具</div>
+      <div v-for="value in myCodeList" :key="value.id" class="grid-item myCode" @click="runMyCodeItem(value)">
+        <div class="tool-content">
+          <h3>{{ value.name }}</h3>
+          <p>{{ value.description }}</p>
+        </div>
+      </div>
       <div class="grid-item" v-for="item in tools" :key="item.id"
         :style="{ gridColumn: 'span ' + item.width, gridRow: 'span ' + item.height }" @click="activeTool = item">
         <div class="tool-content">
@@ -56,8 +62,10 @@
     <iframe v-else-if="activeTool.id === 7" src="./tools/QRCode/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 8" src="./tools/textDiff/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 9" src="./tools/json2Code/index.html" frameborder="0" />
-    <iframe v-else-if="activeTool.id === 10" src="./tools/toast/index.html" frameborder="0" />
     <div v-else>{{ activeTool }}</div>
+  </div>
+  <div class="dialog" v-if="runCodePreview">
+    <iframe ref="runCodeDom" class="run-code-preview" />
   </div>
 
   <!-- 自定义工具弹窗 -->
@@ -90,13 +98,14 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, shallowRef, watch, onBeforeUnmount } from 'vue';
+import { onMounted, ref, shallowRef, watch, onBeforeUnmount, nextTick } from 'vue';
 import { createClient } from '@supabase/supabase-js';
 import Loading from '@/plugins/loading';
 import { EditorView, basicSetup } from "codemirror";
 import { EditorState } from "@codemirror/state";
 import { html } from "@codemirror/lang-html";
 import { oneDark } from "@codemirror/theme-one-dark";
+import Toast from '@/plugins/toast';
 
 const supabase = createClient(
   'https://tizydzbnoppusddwxnay.supabase.co',
@@ -109,6 +118,11 @@ interface Tool {
   description: string;
   width: number;
   height: number;
+}
+interface myCodeItem {
+  id: number;
+  name: string;
+  description: string;
 }
 
 const isInitUser = ref<boolean>(false)
@@ -166,7 +180,6 @@ const tools = ref<Tool[]>([
   { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
   { id: 7, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
   { id: 8, name: '文本对比', description: '对比两个文本的差异', width: 1, height: 1 },
-  { id: 10, name: 'Toast提示', description: '显示提示消息的Toast工具', width: 1, height: 1 },
   // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
   // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
   // { id: 5, name: '正则表达式', description: '正则表达式测试和验证', width: 1, height: 1 },
@@ -185,6 +198,8 @@ const tools = ref<Tool[]>([
   // { id: 23, name: '文件加密', description: '文件加密工具', width: 2, height: 1 },
 ]);
 
+const myCodeList = ref<myCodeItem[]>([])
+
 // 运行代码预览
 function runCode() {
   // 从CodeMirror编辑器获取代码
@@ -195,18 +210,10 @@ function runCode() {
 }
 
 async function saveCode() {
-  // fetch('https://tizydzbnoppusddwxnay.supabase.co/functions/v1/saveCode', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({
-  //     code: customHtmlCode.value,
-  //   }),
-  // })
   const { data, error } = await supabase.functions.invoke('saveCode', {
     body: {
-      title: '自定义工具',
+      name: '自定义工具',
+      description: '自定义的HTML工具',
       code: customHtmlCode.value,
     }
   })
@@ -215,9 +222,34 @@ async function saveCode() {
     return;
   }
   if (data.status === 201) {
+    Toast.success('代码保存成功')
     console.log('代码保存成功:', data);
     showCustomToolDialog.value = false;
+    await getMyCodeList();
   }
+}
+
+const runCodePreview = ref<string>('')
+const runCodeDom = ref<HTMLDivElement | null>(null)
+async function runMyCodeItem(item: myCodeItem) {
+  const { data } = await supabase.functions.invoke('getCodeById', {
+    body: {
+      id: item.id,
+    }
+  })
+  console.log(data)
+  if (!data || !data.code) {
+    return;
+  }
+  runCodePreview.value = data.code
+
+  nextTick(() => {
+    // 直接把代码写入这个iframe里
+    if (runCodeDom.value) {
+      runCodeDom.value.contentDocument.clear()
+      runCodeDom.value.contentDocument.write(data.code)
+    }
+  })
 }
 
 // 初始化CodeMirror编辑器
@@ -265,6 +297,8 @@ watch(showCustomToolDialog, (newVal) => {
 
 onMounted(async () => {
   initUnitUserInfo();
+  // 获取代码列表
+  await getMyCodeList();
   // 初始化预览
   runCode();
 })
@@ -273,6 +307,16 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   destroyCodeMirror();
 })
+
+async function getMyCodeList() {
+  const { data, error } = await supabase.functions.invoke('myCodeList')
+  if (error) {
+    console.error('获取代码列表失败:', error.message);
+    return;
+  }
+  myCodeList.value = data || []
+  console.log('代码列表:', data);
+}
 
 async function initUnitUserInfo() {
   const {
@@ -302,7 +346,6 @@ async function initUnitUserInfo() {
     console.log('用户未登录')
     return
   }
-  console.log('ooooo', user)
   userInfo.value = user as any;
   isInitUser.value = true;
 }
@@ -528,34 +571,38 @@ async function signOut() {
     font-size: 18px;
     color: white;
   }
-}
 
-.grid-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
+  &.myCode {
+    border: solid 1px green;
+  }
 
-.tool-content {
-  padding: 20px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  cursor: pointer;
-}
+  .grid-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
 
-.tool-content h3 {
-  margin: 0 0 10px 0;
-  color: #333;
-  font-size: 1.2em;
-}
+  .tool-content {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+  }
 
-.tool-content p {
-  margin: 0;
-  color: #666;
-  font-size: 0.9em;
+  .tool-content h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.2em;
+  }
+
+  .tool-content p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9em;
+  }
 }
 
 .dialog {
