@@ -87,7 +87,7 @@
         <div class="panel-header">
           <h3>HTML代码编辑器</h3>
           <div style="flex-grow: 1;"></div>
-          <button @click="runCode">运行</button>
+          <Button @click="runCode">运行</Button>
         </div>
         <div ref="editorParent" class="codemirror-editor"></div>
       </div>
@@ -95,7 +95,7 @@
         <div class="panel-header">
           <h3>预览</h3>
           <div style="flex-grow: 1;"></div>
-          <button @click="saveCode" :loading="saveLoading">保存</button>
+          <Button @click="saveCode" :loading="saveLoading">保存</Button>
         </div>
         <div class="preview-content" v-html="customHtmlPreview"></div>
       </div>
@@ -112,6 +112,7 @@ import { EditorState } from "@codemirror/state";
 import { html } from "@codemirror/lang-html";
 import { oneDark } from "@codemirror/theme-one-dark";
 import Toast from '@/plugins/toast';
+import Button from '@/components/Button.vue';
 
 const supabase = createClient(
   'https://tizydzbnoppusddwxnay.supabase.co',
@@ -159,6 +160,27 @@ const customHtmlCode = ref<string>(`<!DOCTYPE html>
         .container {
             max-width: 800px;
             margin: 0 auto;
+        }
+        /* 按钮样式 */
+        .btn {
+          background-color: #4285f4;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 16px;
+          cursor: pointer;
+          font-size: 14px;
+          margin: 8px;
+        }
+
+        .btn:hover {
+          background-color: #3367d6;
+        }
+
+        .btn:disabled {
+          background-color: #cccccc;
+          cursor: not-allowed;
+          opacity: 0.6;
         }
     </style>
 </head>
