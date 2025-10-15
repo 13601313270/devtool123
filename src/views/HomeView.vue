@@ -30,7 +30,7 @@
     </div>
 
     <div class="grid-container">
-      <div class="grid-item create">+&nbsp;定义自己的工具</div>
+      <div class="grid-item create" @click="showCustomToolDialog = true">+&nbsp;定义自己的工具</div>
       <div class="grid-item" v-for="item in tools" :key="item.id"
         :style="{ gridColumn: 'span ' + item.width, gridRow: 'span ' + item.height }" @click="activeTool = item">
         <div class="tool-content">
@@ -56,14 +56,47 @@
     <iframe v-else-if="activeTool.id === 7" src="./tools/QRCode/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 8" src="./tools/textDiff/index.html" frameborder="0" />
     <iframe v-else-if="activeTool.id === 9" src="./tools/json2Code/index.html" frameborder="0" />
+    <iframe v-else-if="activeTool.id === 10" src="./tools/toast/index.html" frameborder="0" />
     <div v-else>{{ activeTool }}</div>
+  </div>
+
+  <!-- 自定义工具弹窗 -->
+  <div class="dialog custom-tool-dialog" v-if="showCustomToolDialog">
+    <div class="title">
+      自定义工具
+      <div class="close" @click="showCustomToolDialog = false">
+        <img src="@/assets/close.svg" alt="" />
+      </div>
+    </div>
+    <div class="custom-tool-content">
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h3>HTML代码编辑器</h3>
+          <div style="flex-grow: 1;"></div>
+          <button @click="runCode">运行</button>
+        </div>
+        <div ref="editorParent" class="codemirror-editor"></div>
+      </div>
+      <div class="preview-panel">
+        <div class="panel-header">
+          <h3>预览</h3>
+          <div style="flex-grow: 1;"></div>
+          <button @click="saveCode">保存</button>
+        </div>
+        <div class="preview-content" v-html="customHtmlPreview"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, shallowRef, watch, onBeforeUnmount } from 'vue';
 import { createClient } from '@supabase/supabase-js';
 import Loading from '@/plugins/loading';
+import { EditorView, basicSetup } from "codemirror";
+import { EditorState } from "@codemirror/state";
+import { html } from "@codemirror/lang-html";
+import { oneDark } from "@codemirror/theme-one-dark";
 
 const supabase = createClient(
   'https://tizydzbnoppusddwxnay.supabase.co',
@@ -89,6 +122,40 @@ const userHover = ref<boolean>(false)
 const activeTool = ref<Tool>()
 const avatarUrl = ref<string>()
 
+// 自定义工具弹窗相关
+const showCustomToolDialog = ref<boolean>(false)
+const customHtmlCode = ref<string>(`<!DOCTYPE html>
+<html>
+<head>
+    <title>我的工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎使用我的自定义工具</h1>
+        <p>在这里编写您的HTML代码，创建您自己的工具。</p>
+        <button onclick="alert('Hello, World!')">点击我</button>
+    </div>
+</body>
+</html>`)
+const customHtmlPreview = ref<string>('')
+
+// CodeMirror 编辑器相关
+const editorView = shallowRef<EditorView | null>(null)
+const editorParent = ref<HTMLElement | null>(null)
+
 const tools = ref<Tool[]>([
   { id: 1, name: 'JSON格式化', description: '美化和格式化JSON数据', width: 1, height: 1 },
   { id: 9, name: 'JSON转Code', description: '将JSON数据转换为代码Java/Swift/Kotlin/ Typescript/C#/Python', width: 1, height: 1 },
@@ -99,6 +166,7 @@ const tools = ref<Tool[]>([
   { id: 6, name: '颜色选择器', description: '颜色值转换和选取', width: 1, height: 1 },
   { id: 7, name: '二维码生成', description: '生成二维码图片', width: 1, height: 1 },
   { id: 8, name: '文本对比', description: '对比两个文本的差异', width: 1, height: 1 },
+  { id: 10, name: 'Toast提示', description: '显示提示消息的Toast工具', width: 1, height: 1 },
   // { id: 3, name: '时间转换器', description: '多种时间格式转换', width: 2, height: 1 },
   // { id: 4, name: 'API测试', description: 'HTTP请求测试工具', width: 1, height: 2 },
   // { id: 5, name: '正则表达式', description: '正则表达式测试和验证', width: 1, height: 1 },
@@ -116,8 +184,94 @@ const tools = ref<Tool[]>([
   // { id: 22, name: '文件拆分', description: '拆分大文件为多个小文件', width: 2, height: 1 },
   // { id: 23, name: '文件加密', description: '文件加密工具', width: 2, height: 1 },
 ]);
+
+// 运行代码预览
+function runCode() {
+  // 从CodeMirror编辑器获取代码
+  if (editorView.value) {
+    customHtmlCode.value = editorView.value.state.doc.toString();
+  }
+  customHtmlPreview.value = customHtmlCode.value
+}
+
+async function saveCode() {
+  // fetch('https://tizydzbnoppusddwxnay.supabase.co/functions/v1/saveCode', {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify({
+  //     code: customHtmlCode.value,
+  //   }),
+  // })
+  const { data, error } = await supabase.functions.invoke('saveCode', {
+    body: {
+      title: '自定义工具',
+      code: customHtmlCode.value,
+    }
+  })
+  if (error) {
+    console.error('保存代码失败:', error.message);
+    return;
+  }
+  if (data.status === 201) {
+    console.log('代码保存成功:', data);
+    showCustomToolDialog.value = false;
+  }
+}
+
+// 初始化CodeMirror编辑器
+function initCodeMirror() {
+  if (editorParent.value && !editorView.value) {
+    editorView.value = new EditorView({
+      state: EditorState.create({
+        doc: customHtmlCode.value,
+        extensions: [
+          basicSetup,
+          html(),
+          oneDark,
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              customHtmlCode.value = update.state.doc.toString();
+            }
+          })
+        ]
+      }),
+      parent: editorParent.value
+    });
+  }
+}
+
+// 销毁CodeMirror编辑器
+function destroyCodeMirror() {
+  if (editorView.value) {
+    editorView.value.destroy();
+    editorView.value = null;
+  }
+}
+
+// 监听弹窗状态变化
+watch(showCustomToolDialog, (newVal) => {
+  if (newVal) {
+    // 弹窗显示时，延迟初始化CodeMirror编辑器
+    setTimeout(() => {
+      initCodeMirror();
+    }, 100);
+  } else {
+    // 弹窗关闭时销毁编辑器
+    destroyCodeMirror();
+  }
+});
+
 onMounted(async () => {
   initUnitUserInfo();
+  // 初始化预览
+  runCode();
+})
+
+// 在组件卸载前销毁编辑器
+onBeforeUnmount(() => {
+  destroyCodeMirror();
 })
 
 async function initUnitUserInfo() {
@@ -190,6 +344,8 @@ async function signOut() {
   padding: 20px;
   box-sizing: border-box;
   min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .head {
@@ -449,6 +605,99 @@ async function signOut() {
     width: 100%;
     height: 100%;
     flex-grow: 1;
+  }
+}
+
+// 自定义工具弹窗样式
+.custom-tool-dialog {
+  .custom-tool-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+
+    .editor-panel,
+    .preview-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+
+        h3 {
+          margin: 0;
+          color: #333;
+        }
+
+        button {
+          background-color: #4285f4;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 16px;
+          cursor: pointer;
+          font-size: 14px;
+          margin-left: 8px;
+
+          &:hover {
+            background-color: #3367d6;
+          }
+        }
+      }
+
+      textarea {
+        flex: 1;
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        resize: none;
+        outline: none;
+
+        &:focus {
+          border-color: #4285f4;
+        }
+      }
+
+      .preview-content {
+        flex: 1;
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        overflow: auto;
+        background-color: white;
+      }
+    }
+
+    .editor-panel {
+      border-right: 1px solid #eee;
+
+      .codemirror-editor {
+        flex: 1;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+
+        :deep(.cm-editor) {
+          height: 100%;
+        }
+
+        :deep(.cm-scroller) {
+          font-family: 'Courier New', monospace;
+          font-size: 14px;
+        }
+      }
+    }
   }
 }
 </style>
