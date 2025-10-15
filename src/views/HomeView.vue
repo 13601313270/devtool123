@@ -2,7 +2,7 @@
   <div class="home">
     <div class="head">
       <h1>&lt;/&gt;&nbsp;&nbsp;开发工具合集</h1>
-      <div class="userIcon" v-if="userInfo?.user_metadata.full_name">
+      <div class="userIcon" v-if="isInitUser && userInfo?.user_metadata.full_name">
         <img v-if="avatarUrl" :src="avatarUrl" alt="" @click="userHover = true" />
         <img v-else src="../assets/user.svg" alt="" @click="userHover = true" />
         <div class="hoverPanelOuter" v-if="userInfo?.user_metadata.full_name">
@@ -18,18 +18,19 @@
           </div>
         </div>
       </div>
-      <div v-else class="loginList">
+      <div v-else-if="isInitUser" class="loginList">
         <div class="title">Log in</div>
-        <div class="loginButton" @click="signInWithGoogle('google')">
+        <div class="loginButton" @click="signIn('google')">
           <img src="../assets/google.svg" alt="">
         </div>
-        <div class="loginButton" @click="signInWithGoogle('github')">
+        <div class="loginButton" @click="signIn('github')">
           <img src="../assets/github.svg" alt="">
         </div>
       </div>
     </div>
 
     <div class="grid-container">
+      <div class="grid-item create">+&nbsp;定义自己的工具</div>
       <div class="grid-item" v-for="item in tools" :key="item.id"
         :style="{ gridColumn: 'span ' + item.width, gridRow: 'span ' + item.height }" @click="activeTool = item">
         <div class="tool-content">
@@ -149,8 +150,9 @@ async function initUnitUserInfo() {
   }
   console.log('ooooo', user)
   userInfo.value = user as any;
+  isInitUser.value = true;
 }
-async function signInWithGoogle(provider: 'google' | 'github') {
+async function signIn(provider: 'google' | 'github') {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -203,8 +205,8 @@ async function signOut() {
   }
 
   .userIcon {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: 24px;
     background-color: #E6E6F1;
     box-shadow: 0 0 1px #a1a1a7;
@@ -218,8 +220,8 @@ async function signOut() {
     // }
 
     >img {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       border-radius: 24px;
       margin-right: 8px;
       cursor: pointer;
@@ -333,8 +335,8 @@ async function signOut() {
       cursor: pointer;
 
       >img {
-        width: 24px;
-        height: 24px;
+        width: 36px;
+        height: 36px;
       }
     }
   }
@@ -357,6 +359,19 @@ async function signOut() {
   display: flex;
   flex-direction: column;
   border: solid 1px #e6e6e6;
+
+  &.create {
+    // border: solid 1px #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    background-color: #4285f4;
+    font-size: 18px;
+    color: white;
+  }
 }
 
 .grid-item:hover {
