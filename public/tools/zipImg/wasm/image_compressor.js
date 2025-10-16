@@ -150,6 +150,9 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbg_log_6c7b5f4f00b8ce3f = function(arg0) {
+        console.log(arg0);
+    };
     imports.wbg.__wbg_log_7917fde260a8fd39 = function(arg0, arg1) {
         console.log(arg0, arg1);
     };
