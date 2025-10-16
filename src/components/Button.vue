@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 });
 
-const emit = defineEmits(['click']);
+const emit = defineEmits<{(e: 'click', event: MouseEvent): void}>();
 
 const handleClick = (event: MouseEvent) => {
   // 阻止在 disabled 或 loading 状态下的点击事件

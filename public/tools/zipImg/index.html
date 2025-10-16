@@ -375,6 +375,9 @@
                     selectedFile = event.target.files[0];
                     fileInfo.textContent = `(${(selectedFile.size / 1024).toFixed(2)} KB)`;
 
+                    // 自动切换输出格式为与上传文件相同的格式
+                    autoSwitchOutputFormat(selectedFile);
+
                     // 显示原图
                     const originalImageInfo = document.getElementById('originalImageInfo');
                     const originalImage = document.getElementById('originalImage');
@@ -448,6 +451,9 @@
                 selectedFile = file;
                 fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
 
+                // 自动切换输出格式为与上传文件相同的格式
+                autoSwitchOutputFormat(file);
+
                 // 显示原图
                 const originalImageInfo = document.getElementById('originalImageInfo');
                 const originalImage = document.getElementById('originalImage');
@@ -464,6 +470,32 @@
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 imageInput.files = dataTransfer.files;
+            }
+
+            // 自动切换输出格式函数
+            function autoSwitchOutputFormat(file) {
+                const formatSelect = document.getElementById('format');
+                const fileType = file.type.split('/')[1].toLowerCase();
+                
+                // 检查是否有匹配的格式选项
+                let optionFound = false;
+                for (let i = 0; i < formatSelect.options.length; i++) {
+                    if (formatSelect.options[i].value === fileType) {
+                        formatSelect.selectedIndex = i;
+                        optionFound = true;
+                        break;
+                    }
+                }
+                
+                // 如果没有找到匹配的格式，切换到jpeg
+                if (!optionFound) {
+                    for (let i = 0; i < formatSelect.options.length; i++) {
+                        if (formatSelect.options[i].value === 'jpeg') {
+                            formatSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
             }
 
             document.getElementById('compressButton').addEventListener('click', async () => {
