@@ -294,7 +294,7 @@
         <div class="tools">
             <label for="quality">Quality:</label>
             <div class="quality-control">
-                <input type="range" id="quality" min="1" max="100" value="80">
+                <input type="range" id="quality" min="0" max="100" value="80">
                 <span id="qualityValue">80</span>
             </div>
             <label for="format">Output Format:</label>
@@ -575,8 +575,8 @@
                         stats.innerHTML = `
                             <div><div>Quality:</div><div class="value">${quality}</div></div>
                             <div><div>Image Size:</div><div class="value">${img.width} x ${img.height}</div></div>
-                            <div><div>File Size:</div><div class="value">${compressedSizeInKB} KB</div></div>
-                            <div><div>Ratio:</div><div class="value">${compressionRatio.toFixed(2)}%</div></div>
+                            <div><div>File Size:</div><div class="value" style="color: ${compressionRatio > 0 ? 'green' : 'red'};">${compressedSizeInKB} KB</div></div>
+                            <div><div>Ratio:</div><div class="value" style="color: ${compressionRatio > 0 ? 'green' : 'red'};">${compressionRatio.toFixed(2)}%</div></div>
                         `;
                         resultContainer.appendChild(stats);
                         stats.appendChild(downloadBtn);
